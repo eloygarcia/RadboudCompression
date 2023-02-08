@@ -78,9 +78,6 @@ The exposed pipeline need to be repeated for each image.
 ./ItkToCGAL inputfilename outputfilename arguments
 ```
 
-> :warning: **This function was found during the current work and it was NOT testes** 
-> Be very careful here!
-
 This functions should be used to extract the biomechanical model without using `iso2mesh`  and `Matlab`.
 However, we need the [`CGAL` Library](https://www.cgal.org/)
 
@@ -88,9 +85,20 @@ However, we need the [`CGAL` Library](https://www.cgal.org/)
   - `ìnputfilename`  path to the `.nrrd` or `.mhd` image (both correspond to itk image formats)
   - `outputfilename` path to the mesh file. I usually get a `.vtk` file, but (I do not why) this function is ready  to write `.inp` files (Abacus$^{TM}$ and ANSYS$^{TM]$ format)
   - `arguments` several arguments to modify the number of elements and quality of the final mesh. I need to check what each argument does.
-    - `--value_ouside`
-    - `--facet_angle`
-    - `--facte_size`
-    - `--facet_distance`
-    - `--cell_radius_edge_ratio`
-    - `--cell_size`
+    - `--value_ouside` (default 0)
+    - `--facet_angle` (default 30)
+    - `--facet_size` (default 5)
+    - `--facet_distance` (default 1)
+    - `--cell_radius_edge_ratio` (default 1)
+    - `--cell_size` (default 5)
+
+> :warning: **First try:** --facet_size 1 --facet_distance 0.5 --cell_size 0.75 --cell_radius_edge_ratio 2
+> 
+> no. points 39190
+> 
+> no. elements 221386
+>
+> VTK WRITER DOESN'T WORK!!!
+> 
+ 
+

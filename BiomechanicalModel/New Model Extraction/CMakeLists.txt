@@ -21,9 +21,17 @@ include(${CGAL_USE_FILE})
 
 find_package( Boost REQUIRED )
 include_directories(${Boost_INCLUDE_DIRS})
-set(LIBS ${LIBS} ${Boost_LIBRARIES})
+set(LIBS
+    ${LIBS}
+    ${Boost_LIBRARIES})
 
 set(SOURCE_FILES source.cpp)
-add_executable(${PROJECT_NAME} ${SOURCE_FILES})
+add_executable(${PROJECT_NAME}
+                ${SOURCE_FILES})
 
-target_link_libraries(${PROJECT_NAME} ${CGAL_LIBS} ${Boost_LIBRARIES} ${Glue} ${VTK_LIBRARIES} ${ITK_LIBRARIES})
+target_link_libraries(${PROJECT_NAME}
+                         ${CGAL_LIBS}
+                         ${Boost_LIBRARIES}
+                         ${Glue}
+                         ${VTK_LIBRARIES}
+                         ${ITK_LIBRARIES})

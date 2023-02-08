@@ -378,7 +378,6 @@ void writeVTKmesh( std::string outputfilename, C3t3 c3t3)
 		initialGridWriter->SetFileName( outputfilename.c_str() );
 		initialGridWriter->Update();
 		initialGridWriter->Write();
-
 }
 
 
