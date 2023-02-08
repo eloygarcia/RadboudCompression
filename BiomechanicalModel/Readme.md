@@ -50,9 +50,19 @@ All features were optimized to obtain a suitable number of elements using isotro
 ./ItkToCGAL inputfilename outputfilename arguments
 ```
 
-> :warning: **This functionwas found during the current work and it was NOT testes** 
+> :warning: **This function was found during the current work and it was NOT testes** 
 > Be very careful here!
 
 This functions should be used to extract the biomechanical model without using `iso2mesh`  and `Matlab`.
 However, we need the [`CGAL` Library](https://www.cgal.org/)
 
+- Input 
+  - `ìnputfilename`  path to the `.nrrd` or `.mhd` image (both correspond to itk image formats)
+  - `outputfilename` path to the mesh file. I usually get a `.vtk` file, but (I do not why) this function is ready  to write `.inp` files (Abacus$^{TM}$ and ANSYS$^{TM]$ format)
+  - `arguments` several arguments to modify the number of elements and quality of the final mesh. I need to check what each argument does.
+    - `--value_ouside`
+    - `--facet_angle`
+    - `--facte_size`
+    - `--facet_distance`
+    - `--cell_radius_edge_ratio`
+    - `--cell_size`
