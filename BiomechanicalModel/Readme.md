@@ -28,8 +28,26 @@ This function transform was created to transform the images.
 
 ### Matlab code
 
+> > :warning: **REQUIRED [iso2mesh](https://github.com/fangq/iso2mesh)!!**
+  
 ```
-I need to check
+addpath( $iso2mesh )
+
+im = uint8( logical( nrrdread( breast_mask.nrrd ));
+im = permute( im, [2,1,3]);
+
+spacing = 0.273; 
+
+opt = varargin2struc('radbound', 10, 'distbound', 10, 'maxnode', 20); % to Koen
+% opt = varargin2struc('radbound', 15, 'distbound', 15, 'maxnode', 30); % to Marco (why?)
+
+[nodes, elements, faces] = cgalv2m(im, opt, 10);
+[nodes, elemnents] = clearmesh( nodes, elements(:,1:4) );
+nodes = nodes * spacing;
+
+boundaryConditions = nodes(:,1) < (min(nodes(:,1))+2);
+
+writeVTK( `path_to_mesh.vtk`, elements(:,1:4), nodes(:,1:3), boundaryConditions); 
 ```
 
 The Matlab code is used to obtain the biomechanical models from the `.nrrd` images. 
@@ -37,8 +55,14 @@ If the original image has isotropic voxels, we could use the original `.tiff` im
 
 All features were optimized to obtain a suitable number of elements using isotropic voxels.
 
-- Input
+- Inputs & options
   - `breast.nrrd` path to the `.nrrd` image (I think)
+  - `spacing` due to historical issues, it is defined to $0.273\times0.273\times0.273~mm^3$
+  - `opt` arguments to define the mesh. I've found two versions (to Koen and to Marco) but I don't know which is the best
+  - `cgalv2m` the `iso2mesh`function used to create the mask 
+  - `clearmesh` we need to avoid isolated nodes on the mesh
+  - `boundaryConditions` depends on the breast orientation
+  - `writeVTK` is a function used to write the `.vtk` unstructured mesh with its information.
 
 - Output
   - `phantom.vtk` the phantom mesh, which will be compressed using FE

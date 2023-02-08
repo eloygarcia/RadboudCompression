@@ -23,3 +23,12 @@ Currently, I'm Checking and sharing the code.
 ## Pipeline
 
 - BiomechanicalModel/RewriteInformation --> Convert `breast.tiff` images into `breast.nrrd`images
+
+```bash
+./RewriteInformation breast_segmentation.tiff output_path.nrrd voxelSizeX voxelSizeY voxelSizeZ
+
+```
+- output:
+  - `breast_image.nrrd` original breast segmentation image with spacial information
+  - `resampled_image.nrrd` breast mask with $0.273\times0.273\times0.273~mm^3$
+  - 
