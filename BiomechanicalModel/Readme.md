@@ -8,14 +8,13 @@ First step is to build a biomechanical model of the breast, from CT segmented im
 ```bash
 ./RewriteInformation breast.tiff breast.nrrd voxelSizeX voxelSizeY voxelSizeZ
 ```
-
-> :warning: **This fuction is NOT testes, because we do not have the original `.tiff` images
-> **: Be very careful here!
-> 
+ 
 In our case, we start using `.tiff` images, without physical (i.e. voxel size) information. 
 To obtain a realistic breast shape, we need to know the actual physical shape.
 So, we use the itk file format (i.e `.nrrd`) in order to preserve this information.
-This function transform was created to transform the images.
+This function was created to use isotropic and anisotropic voxel size, preserving the information.
+However, to reduce the complexity, we use isotropic voxels to extract the biomechanical model.
+Therefore, we obtain both, the original breast segmentation and a resampled version.
 
 - Input 
   - `breast.tiff` path to `.tiff` image.
@@ -24,7 +23,9 @@ This function transform was created to transform the images.
 
 - Output
   - `breast.nrrd` original segmentated image, in `.nrrd` format
-  - `breast-resampled.nrrd` breast mask (binary, background vs. breast, I think), resampled to isotropic voxels ($0.273\times0.273\times0.273~mm^3$) due to historical issues.
+  - `breast-resampled.nrrd` resampled to isotropic voxels ($0.273\times0.273\times0.273~mm^3$) due to historical issues.
+
+
 
 ### Matlab code
 
@@ -66,6 +67,9 @@ All features were optimized to obtain a suitable number of elements using isotro
 
 - Output
   - `phantom.vtk` the phantom mesh, which will be compressed using FE
+
+The exposed pipeline need to be repeated for each image. 
+
 
 
 ### New Model Extraction

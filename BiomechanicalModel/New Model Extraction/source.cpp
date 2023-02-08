@@ -115,7 +115,7 @@ void writeInpFile(std::string outputfilename, C3t3 c3t3)
     file.open( outputfilename.c_str() );
 
     file << "*HEADING \n";
-    file << "E.Garcia - O.Diaz Universitat de Girona, 2018 \n";
+    file << "E.Garcia, January 2023 \n";
     file << "Units: Millimetres (mm) \n";
     file << "**============================================================================== \n";
 
@@ -433,6 +433,7 @@ int main(int argc, char* argv[])
             return EXIT_FAILURE;
         }
 
+    std::cout << "itk to vtk" << std::endl;
     // Itk to Vtk
     ItktoVtkType::Pointer itkToVtk = ItktoVtkType::New();
         itkToVtk->SetInput( reader->GetOutput() );
@@ -444,6 +445,7 @@ int main(int argc, char* argv[])
             return EXIT_FAILURE;
         }
 
+    std::cout << "vtk to cgal" << std::endl;
     // Vtk to CGAL
     CGAL::Image_3 image = CGAL::read_vtk_image_data( itkToVtk->GetOutput() );
     if( image.image() == 0 ){
@@ -451,6 +453,7 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
+    std::cout << "labeled Image to mesh" << std::endl;
     // Labeled image to Mesh
     using namespace CGAL::parameters;
     Mesh_domain domain = Mesh_domain::create_labeled_image_mesh_domain(
