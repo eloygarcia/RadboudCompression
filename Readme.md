@@ -19,3 +19,7 @@ The biomechanical model extraction is performed using the library [iso2mesh](htt
 The current code was not directly written to create bCT phantoms but as a part of a multimodal registration pipeline. Therefore, it may fail in several parts.
 
 Currently, I'm Checking and sharing the code.
+
+## Pipeline
+
+- BiomechanicalModel/RewriteInformation --> Convert `breast.tiff` images into `breast.nrrd`images
