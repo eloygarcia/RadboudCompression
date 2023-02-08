@@ -24,7 +24,7 @@ This function transform was created to transform the images.
 
 - Output
   - `breast.nrrd` original segmentated image, in `.nrrd` format
-  - `breast-resampled.nrrd` breast mask (binary, background vs. breast, I think), resampled to $0.273~mm^{3}$ due to historical issues.
+  - `breast-resampled.nrrd` breast mask (binary, background vs. breast, I think), resampled to isotropic voxels ($0.273\times0.273\times0.273~mm^3$) due to historical issues.
 
 ### Matlab code
 
@@ -33,4 +33,26 @@ I need to check
 ```
 
 The Matlab code is used to obtain the biomechanical models from the `.nrrd` images. 
-If the original image has isotropic voxels, 
+If the original image has isotropic voxels, we could use the original `.tiff` images.
+
+All features were optimized to obtain a suitable number of elements using isotropic voxels.
+
+- Input
+  - `breast.nrrd` path to the `.nrrd` image (I think)
+
+- Output
+  - `phantom.vtk` the phantom mesh, which will be compressed using FE
+
+
+### New Model Extraction
+
+```bash
+./ItkToCGAL inputfilename outputfilename arguments
+```
+
+> :warning: **This functionwas found during the current work and it was NOT testes** 
+> Be very careful here!
+
+This functions should be used to extract the biomechanical model without using `iso2mesh`  and `Matlab`.
+However, we need the [`CGAL` Library](https://www.cgal.org/)
+
