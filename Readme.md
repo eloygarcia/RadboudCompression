@@ -12,7 +12,12 @@ The algorithm is divided into 3 main parts:
 
 This software was written using c++ and, mainly, the [itk](https://itk.org/) and [vtk](https://vtk.org/) libraries.
 
-The biomechanical model extraction is performed using the library [iso2mesh](https://github.com/fangq/iso2mesh) and, therefore, we need to use either Matlab$^{TM}$ or Octave$^{TM}$. We are trying a code based on the [cgal library](https://www.cgal.org/) to directly transform itk images into 3D meshes.
+The biomechanical model extraction is performed using the library [iso2mesh](https://github.com/fangq/iso2mesh) and, therefore, we need to use either Matlab$^{TM}$ or Octave$^{TM}$.
+We are trying a code based on the [cgal library](https://www.cgal.org/) to directly transform itk images into 3D meshes.
+
+The FE compression is performed using [NiftySim v.2.5.1](https://sourceforge.net/projects/niftysim/).
+This is the most important but the most outdated part.
+
 
 ### Current situation
 
