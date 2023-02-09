@@ -20,7 +20,7 @@ The biomechanical model extraction is performed using the library [iso2mesh](htt
 We are trying a code based on the [cgal library](https://www.cgal.org/) to directly transform itk images into 3D meshes.
 
 The FE compression is performed using [NiftySim v.2.5.1](https://sourceforge.net/projects/niftysim/).
-This is the most important but the most outdated part.
+> :warning: This is the most important but the most outdated part.
 
 
 ### Current situation
@@ -31,13 +31,21 @@ Currently, I'm Checking and sharing the code.
 
 ## Pipeline
 
-- BiomechanicalModel/RewriteInformation --> Convert `breast.tiff` images into `breast.nrrd`images
+- Biomechanical Model/Rewrite Information --> Convert `breast.tiff` images into `breast.nrrd`images
 
 ```bash
 ./RewriteInformation breast_segmentation.tiff output_path.nrrd voxelSizeX voxelSizeY voxelSizeZ
 
 ```
-- output:
-  - `breast_image.nrrd` original breast segmentation image with spacial information
-  - `resampled_image.nrrd` breast mask with $0.273\times0.273\times0.273~mm^3$
-  - 
+  - output:
+    - `breast_image.nrrd` original breast segmentation image with spacial information
+    - `resampled_image.nrrd` breast mask with $0.273\times0.273\times0.273~mm^3$
+
+- Biomechanical Model/Matlab Code --> Biomechanical model extraction using `iso2mesh`.
+
+> :warning: **Check the folder!**
+
+  - output:
+    - `mesh.vtk` Contains the FE breast model (with boundary Conditions and element labels???) 
+
+- FE Simulation/Write Nifty Model
