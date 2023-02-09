@@ -10,7 +10,11 @@ The algorithm is divided into 3 main parts:
 
 ### Dependencies
 
-This software was written using c++ and, mainly, the [itk](https://itk.org/) and [vtk](https://vtk.org/) libraries.
+This software was written using c++ and, mainly, the [itk](https://itk.org/) and [vtk](https://vtk.org/) libraries. 
+> :warning: Currently, the software uses vtk v.7 (i.e. datafile version v.2). 
+> However, the latest vtk version v.9 uses another file datafile version (v.5.1), and it may affect to the performance. 
+> **I'm checking this issue**
+
 
 The biomechanical model extraction is performed using the library [iso2mesh](https://github.com/fangq/iso2mesh) and, therefore, we need to use either Matlab$^{TM}$ or Octave$^{TM}$.
 We are trying a code based on the [cgal library](https://www.cgal.org/) to directly transform itk images into 3D meshes.

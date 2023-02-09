@@ -1,15 +1,20 @@
-cmake_minimum_required(VERSION 3.5)
+cmake_minimum_required(VERSION 2.8)
 project(WriteNiftyModel)
+
+find_package(ITK)
+include(${ITK_USE_FILE})
 
 find_package(VTK)
 # include(${VTK_USE_FILE})
 include_directories(${VTK_INCLUDE_DIRS})
 
 add_library( Library xml.cpp
-                     xmlModelWriter.cpp)
+                     xmlModelWriter.cpp
+					 NiftySimEjecutable.cpp)
 
 add_executable( WriteNiftyModel Source.cpp)
 
 target_link_libraries(	WriteNiftyModel
+						${ITK_LIBRARIES} 
 						${VTK_LIBRARIES} 
 						Library )

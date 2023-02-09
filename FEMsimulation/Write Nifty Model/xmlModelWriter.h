@@ -57,7 +57,7 @@ public:
 	void addSystemParams(char* parameter, char* value);
 	void addContactPlate(std::vector<double> a, std::vector<double> b, std::vector<double> c, std::vector<double> disp, std::list<int> slvs);
 
-	void addGravity(std::vector<int> nodes, char* AccelerationMagnitude, std::vector<double>  AccelerationDirection);
+	void addGravity(std::list<int> nodes, char* AccelerationMagnitude, std::vector<double>  AccelerationDirection);
 	void addOutput(char* output, char* freq);
 
 	void writeModel( char* outputfilename );

@@ -135,7 +135,7 @@ private:
 		vtkDataArray* vtk_disp;
 		vtkCellArray* cells;
 	
-	int CompressionFunction(modelParameters myParameters, std::string output_dir);
+	void CompressionFunction(modelParameters myParameters, std::string output_dir);
 	void getPoints_compressedBreast( vtkSmartPointer<vtkUnstructuredGrid> niftysim_mesh,
 									std::vector<double> &f_points);
 	void createUnstructuredGrid( std::vector<double> point_vector, 

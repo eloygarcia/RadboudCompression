@@ -38,7 +38,7 @@ struct modelParameters
 		totalTime = "3";
 		DampingCoeff = "0.065";
 		Density = "1";
-		DoDeformableCollision = "0";
+		DoDeformableCollision = "1";
 
 		// Constraint;
 		constraint_type = "Fix";

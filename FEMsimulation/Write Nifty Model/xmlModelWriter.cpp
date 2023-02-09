@@ -104,7 +104,7 @@ void xmlModelWriter::addElementSet(std::vector<int> elementSet, char* Type, std:
 	// std::ostringstream p_oss;
 	std::copy(elasticParams.begin(), elasticParams.end(), std::ostream_iterator<double>(p_oss, " "));
 	
-	// Dado que sólo vamos a tener un tipo de material, se puede quedar. En otros casos NO!
+	// Dado que sï¿½lo vamos a tener un tipo de material, se puede quedar. En otros casos NO!
 	// Creo que si se puede!! Pero hay que preparar los elementos aparte
 
 	this->root->AddElement("<ElementSet>");
@@ -198,7 +198,7 @@ void xmlModelWriter::addSystemParams(char* parameter, char* value)
 		this->children_param +=1;
 }
 
-void xmlModelWriter::addGravity(std::vector<int> nodes, char* AccelerationMagnitude, std::vector<double> AccelerationDirection)
+void xmlModelWriter::addGravity(std::list<int> nodes, char* AccelerationMagnitude, std::vector<double> AccelerationDirection)
 {
 		// stringstream n_ss; 
 	 ss << nodes.size();

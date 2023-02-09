@@ -9,8 +9,8 @@ NiftySimEjecutable::NiftySimEjecutable(void)
 	de = 0.0;
 
 	// ==== De: Compression Function =======
-	niftysim_fn = "\\NiftySim-model.xml";
-	princ = "\"C:\\niftysim\\source\\Debug\\niftysim.exe\" -x ";
+	niftysim_fn = "/NiftySim-model.xml";
+	//princ = "\"C:\\niftysim\\source\\Debug\\niftysim.exe\" -x ";
 
 	// ========= De:   ====================
 	niftysimOutput_reader = vtkSmartPointer<vtkUnstructuredGridReader>::New();
@@ -65,7 +65,7 @@ NiftySimEjecutable::~NiftySimEjecutable(void)
 }
 
 // private
-int NiftySimEjecutable::CompressionFunction(modelParameters myParameters, std::string output_dir)
+void NiftySimEjecutable::CompressionFunction(modelParameters myParameters, std::string output_dir)
 {	
 	// ================================ NiftySim ==============================
 	std::cout << std::endl;
@@ -77,7 +77,8 @@ int NiftySimEjecutable::CompressionFunction(modelParameters myParameters, std::s
 	// =========================================================
 	// std::string niftysim_fn = "\\NiftySim-model.xml";
 	 
-	niftysim_filename = output_dir + niftysim_fn;
+	// niftysim_filename = output_dir + niftysim_fn;
+	niftysim_filename = output_dir;
 	// =========================================================
 	
 	action = princ + output_dir + niftysim_fn + " -sport -t -v -export-mesh " +
@@ -129,9 +130,13 @@ int NiftySimEjecutable::CompressionFunction(modelParameters myParameters, std::s
 	}//else return EXIT_FAILURE;
 	
 	// Boundary Conditions.
-	//new_model->addConstraint(myParameters.constraint_bC_list, "Fix" , "0"); 
-	//new_model->addConstraint(myParameters.constraint_bC_list, "Fix" , "1"); 
-	new_model->addConstraint(myParameters.constraint_bC_list, "Fix" , "2"); 
+	// new_model->addConstraint(myParameters.constraint_bC_list, "Fix" , "0"); 
+	// new_model->addConstraint(myParameters.constraint_bC_list, "Fix" , "1"); 
+	// new_model->addConstraint(myParameters.constraint_bC_list, "Fix" , "2");
+
+	new_model->addConstraint(myParameters.constraint_bC_list, 
+		myParameters.constraint_type, 
+		myParameters.constraint_axis);
 	
 	// ====================== Contact Plates ========================
 	//std::list<int> unique_node_vector;
@@ -142,56 +147,42 @@ int NiftySimEjecutable::CompressionFunction(modelParameters myParameters, std::s
 	}
 	// std::vector<double> bb = myParameters.boundingBox;
 	bb.clear() ;  bb = myParameters.boundingBox;
-	de = (((float)abs(bb[3] - bb[2]))-((float) myParameters.thickness))/2;
+	de = (((float)abs(bb[3] - (bb[2]+20.0) ))-((float) myParameters.thickness));
 
 	std::cout << std::endl;
 	std::cout << "Bounding box = [" << bb[0] <<", "<< bb[1] <<", "<< bb[2] <<", ";
 	std::cout << bb[3] <<", "<< bb[4] <<", "<< bb[5] <<"] "<< std::endl;
 
 	// 1. Plate 1
-	a.clear() ; a.push_back(bb[0]);	a.push_back(bb[2]-50);	a.push_back(bb[4]-50);
-	b.clear() ; b.push_back(bb[0]);	b.push_back(bb[3]+50);	b.push_back(bb[4]-50);
-	c.clear() ; c.push_back(bb[0]);	c.push_back(bb[2]-50);	c.push_back(bb[5]+50);
+	a.clear() ; a.push_back(bb[0]-50);	a.push_back(bb[2]);	a.push_back(bb[4]-50);
+	b.clear() ; b.push_back(bb[1]+50);	b.push_back(bb[2]);	b.push_back(bb[4]-50);
+	c.clear() ; c.push_back(bb[0]-50);	c.push_back(bb[2]);	c.push_back(bb[5]+50);
 
-	disp.clear() ; disp.push_back(de); disp.push_back(0); disp.push_back(0);
+	disp.clear() ; disp.push_back(0); disp.push_back(+20); disp.push_back(0);
+	std::cout << "Displacement: [" << disp[0] << ", " << disp[1] << ", " << disp[2] << "]" << std::endl;
 //	
-	new_model->addContactPlate(a,b,c,disp, unique_node_vector);
+	new_model->addContactPlate(a,c,b,disp, unique_node_vector);		
 //
-	// Modelo de mamografía !!
-/*	origen.clear();		origen = myParameters.mm_origen;
-	spacing.clear();	spacing = myParameters.mm_spacing;
-	size.clear();		size = myParameters.mm_size;
-
-	a.clear();			a.push_back(origen[0]);						a.push_back(origen[1]);				a.push_back(bb[4]);
-	b.clear(); b.push_back(origen[0]+(size[0]*spacing[0]));			b.push_back(origen[1]);				b.push_back(bb[4]);
-	c.clear();			c.push_back(origen[0]);			c.push_back(origen[1]+(size[1]*spacing[1]));	c.push_back(bb[4]);
-
-	disp.clear() ; disp.push_back(0); disp.push_back(0); disp.push_back(de);
-	
-	new_model->addContactPlate(a,b,c,disp, unique_node_vector);
-	
-	std::cout << "Paddle A [" << a[0] << ", " << a[1] << ", " << a[2] << "] " << std::endl;
-	std::cout << "Paddle B [" << b[0] << ", " << b[1] << ", " << b[2] << "] " << std::endl;
-	std::cout << "Paddle c [" << c[0] << ", " << c[1] << ", " << c[2] << "] " << std::endl;
-	*/
+	// Modelo de mamografï¿½a !!
 
 	// 2. Plate 2.
-	a.clear() ; a.push_back(bb[1]);	a.push_back(bb[2]-50);	a.push_back(bb[4]-50);
-	b.clear() ; b.push_back(bb[1]);	b.push_back(bb[2]-50);	b.push_back(bb[5]+50);
-	c.clear() ; c.push_back(bb[1]);	c.push_back(bb[3]+50);	c.push_back(bb[4]-50);
+	a.clear() ; a.push_back(bb[0]-50);	a.push_back(bb[3]);	a.push_back(bb[4]-50);
+	b.clear() ; b.push_back(bb[0]-50);	b.push_back(bb[3]);	b.push_back(bb[5]+50);
+	c.clear() ; c.push_back(bb[1]+50);	c.push_back(bb[3]);	c.push_back(bb[4]-50);
 //
-	disp.clear() ; disp.push_back(-de); disp.push_back(0); disp.push_back(0);
+	disp.clear() ; disp.push_back(0); disp.push_back(-de); disp.push_back(0);
+	std::cout << "Displacement: [" << disp[0] << ", " << disp[1] << ", " << disp[2] << "]" << std::endl;
 //
-	new_model->addContactPlate(a,b,c,disp, unique_node_vector);
-/*
-	a.clear();			a.push_back(origen[0]);						a.push_back(origen[1]);				a.push_back(bb[5]);
-	b.clear();			b.push_back(origen[0]);			b.push_back(origen[1]+(size[1]*spacing[1]));	b.push_back(bb[5]);
-	c.clear();	c.push_back(origen[0]+(size[0]*spacing[0]));		c.push_back(origen[1]);				c.push_back(bb[5]);
+	new_model->addContactPlate(a,c,b,disp, unique_node_vector);
 
-	disp.clear() ; disp.push_back(0); disp.push_back(0); disp.push_back(-de);
-	
-	new_model->addContactPlate(a,b,c,disp, unique_node_vector);
-	*/
+	//std::vector<int> node_vect;
+	//	for(int i =0; i<unique_node_vector.size(); i++) node_vect.push_back( unique_node_vector[i]);
+	std::vector<double> AccelerationDirection;
+		AccelerationDirection.push_back( 0 );
+		AccelerationDirection.push_back( -1 );
+		AccelerationDirection.push_back( 0 );
+	new_model->addGravity(unique_node_vector, "100", AccelerationDirection);
+
 
 	// =============================== System Params ========================
 	new_model->addSystemParams("<TimeStep>", myParameters.timeStep);
@@ -202,12 +193,13 @@ int NiftySimEjecutable::CompressionFunction(modelParameters myParameters, std::s
 
 	// ======================== Model Writer =========================== 
 	new_model->writeModel( (char*) niftysim_filename.c_str());
+	std::cout << niftysim_filename << std::endl;
 
 	//std::cout << "ACABA DE SALIR DE ESCRIBIR EL XML" << std::endl;
 	// delete new_model[];
 
 	// ======================= Executing NiftySim
-	std::cout<< std::endl;
+/*	std::cout<< std::endl;
 	std::cout << action <<std::endl; 
 	std::cout<< std::endl;
 	
@@ -222,6 +214,7 @@ int NiftySimEjecutable::CompressionFunction(modelParameters myParameters, std::s
 
 	return sys_a;
 	//return 0;
+	*/
 }
 
 void NiftySimEjecutable::createUnstructuredGrid( std::vector<double> point_vector, vtkCellArray* cells, vtkSmartPointer<vtkUnstructuredGrid> &grid)
@@ -308,8 +301,8 @@ int NiftySimEjecutable::Update()
 
 	//CompressionFunction( m_parameters, m_outputDir );
 	
-	int sys_a = CompressionFunction( m_parameters , m_outputDir );
-		if( sys_a!=0) return 1;
+	CompressionFunction( m_parameters , m_outputDir );
+/*		if( sys_a!=0) return 1;
 
 	vtkSmartPointer< ErrorObserver > errorObserver = vtkSmartPointer< ErrorObserver >::New();
 
@@ -334,7 +327,7 @@ int NiftySimEjecutable::Update()
 
 	getPoints_compressedBreast( niftysimOutput_reader->GetOutput(), m_finalpoints);
 	// #endif
-		
+*/
 	return 0;
 }
 
