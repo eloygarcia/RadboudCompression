@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.5)
 project(ReconstructImage)
 
 find_package(ITK)
@@ -40,7 +40,7 @@ cuda_include_directories(
 # set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_GPU_" )
 #  set(CUDA_NVCC_FLAGS ${CUDA_NVCC_FLAGS} --gpu-architecture sm_20)
 # set(CMAKE_CXX_FLAGS ${CMAKE_CXX_FLAGS} --gpu-architecture sm_20 )
-# set(CUDA_SEPARABLE_COMPILATION OFF)  # En off evita un error de compilaci�n del cuda !
+# set(CUDA_SEPARABLE_COMPILATION OFF)  # En off evita un error de compilacion del cuda !
 
 #set(CUDA_VERBOSE_BUILD ON CACHE BOOL "nvcc verbose" )
 #include(FindCUDA)
