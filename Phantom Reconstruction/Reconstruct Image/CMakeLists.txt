@@ -17,7 +17,7 @@ find_package(CUDA REQUIRED)
 # 						)
 # 
 cuda_include_directories(	
-							${CUDA_INCLUDE_DIRS}	
+							${CUDA_INCLUDE_DIRS}
 							${CUDA_SDK_COMMON_INCLUDE_DIR}
 							)
 

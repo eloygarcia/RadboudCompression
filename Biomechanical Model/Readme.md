@@ -22,7 +22,7 @@ Therefore, we obtain both, the original breast segmentation and a resampled vers
   - `voxelSizeX voxelSizeY voxelSizeZ` original physical shape of the `.tiff` image.
 
 - Output
-  - `breast.nrrd` original segmentated image, in `.nrrd` format
+  - `breast.nrrd` original segmented image, in `.nrrd` format
   - `breast-resampled.nrrd` resampled to isotropic voxels ($0.273\times0.273\times0.273~mm^3$) due to historical issues.
 
 

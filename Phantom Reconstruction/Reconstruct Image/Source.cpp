@@ -123,7 +123,10 @@ int main( int argc, char* argv[])
 	double temp_point[3] = {0.0,0.0,0.0};
 
     // Final Points
+
+    // Include a try catch HERE!!!
     vtkDataArray* BoundCond = meshReader->GetOutput()->GetPointData()->GetScalars("displacements");//->GetArray(0);
+
     std::cout << BoundCond->GetNumberOfTuples() << std::endl;
     std::cout << meshReader->GetOutput()->GetNumberOfPoints() << std::endl;
     double * disp;
@@ -143,7 +146,9 @@ int main( int argc, char* argv[])
         final_points.push_back(temp_point[1]+disp[1]);
         final_points.push_back(temp_point[2]+disp[2]);
 	}
-	
+
+	std::cout << "here 1" << std::endl;
+
 	// Elements
 	int accumm = 0;
 	int minimum = 999999999;
@@ -185,6 +190,7 @@ int main( int argc, char* argv[])
         meshWriter->SetFileName( output_mesh.c_str() );
         meshWriter->Update();
 
+    std::cout << "Compressed mesh!" << std::endl;
 
 
     /* ITK */
