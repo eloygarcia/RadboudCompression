@@ -5,10 +5,6 @@
 #include "itkImageFileReader.h"
 #include "itkImageFileWriter.h"
 
-typedef itk::Image< unsigned char, 3> ImageType;
-typedef itk::ImageFileReader< ImageType > ReaderType;
-typedef itk::ImageFileWriter< ImageType > WriterType;
-
 #include "vtkSmartPointer.h"
 #include "vtkUnstructuredGrid.h"
 #include "vtkUnstructuredGridReader.h"
@@ -17,6 +13,10 @@ typedef itk::ImageFileWriter< ImageType > WriterType;
 
 #include "vtkPoints.h"
 #include "vtkCellArray.h"
+
+typedef itk::Image< unsigned char, 3> ImageType;
+typedef itk::ImageFileReader< ImageType > ReaderType;
+typedef itk::ImageFileWriter< ImageType > WriterType;
 
 void extractGrid(vtkSmartPointer<vtkUnstructuredGrid> grid, 
 				 std::vector<float> &initial_points,

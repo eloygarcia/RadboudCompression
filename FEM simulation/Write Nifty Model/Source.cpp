@@ -83,8 +83,8 @@ void LabelElements(ImageType::Pointer image, std::vector<double> initial_points,
 
 int main( int argc, char* argv[])
 {
-    if(argc<3){
-        std::cout << "usage: " << argv[0] << " mesh_filename image_filename ouput_filename" << std::endl;
+    if(argc<4){
+        std::cout << "usage: " << argv[0] << " mesh_filename image_filename ouput_filename thickness" << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -104,10 +104,14 @@ int main( int argc, char* argv[])
 			return EXIT_FAILURE;
 		}
 
+    std::cout << "imagen leida!"<< std::endl;
+
 	// Vtk
     vtkSmartPointer< vtkUnstructuredGridReader> meshReader = vtkSmartPointer< vtkUnstructuredGridReader>::New();
         meshReader->SetFileName( mesh.c_str() );
         meshReader->Update();
+
+    std::cout << "malla leida!" << std::endl;
 
     // =============================== EXTRACCION DE LA MALLA ===========================
 	// Points
@@ -124,7 +128,8 @@ int main( int argc, char* argv[])
 		initial_points.push_back( temp_point[2] );
 	}
 
-	
+	std::cout << "Number of points: " << NoP << std::endl;
+
 	// Elements
 	int accumm = 0;
 	int minimum = 999999999;
@@ -143,7 +148,7 @@ int main( int argc, char* argv[])
 		accumm = accumm + 1 + pts->GetNumberOfIds();
 	}
     
-
+    std::cout << "Number of Cells" << i_cells->GetNumberOfCells()  << std::endl;
     // Tissue!
 	//vtkDataArray* tisue = u_grid_reader->GetOutput()->GetCellData()->GetArray(0);
 	std::vector<int> tissues; // = input_mri->getTissueElements_model();
@@ -160,20 +165,23 @@ int main( int argc, char* argv[])
 	vtkDataArray* BoundCond = meshReader->GetOutput()->GetPointData()->GetArray(0);
 	double tuple = 0;
 	std::vector<int> boundaryConditions; // = input_mri->getBoundaryConditions_model();
-	std::cout << "Boundary Condition! "  << std::endl;
-	for(int i=0; i<i_points->GetNumberOfPoints(); i++)
+
+	//std::cout << "Boundary Condition! "  << std::endl;
+	//std::cout << "Number of points: " << i_points->GetNumberOfPoints() << std::endl;
+
+    std::cout << "if the software fails here, please, check the boundary conditions" << std::endl;
+	for(int i=0; i<i_points->GetNumberOfPoints() ; i++)
 	{
-		tuple = BoundCond->GetTuple1(i);
+		tuple = BoundCond->GetTuple1(i);  // Falta un try-catch si no hay boundary conditions
 		if(tuple==1)
 		{
 			boundaryConditions.push_back( (int)i );
-		 	//std::cout << i << " " ;
 		}
 	}
 
 
 // =========================== Model Parameters. ============================
-
+    std::cout << "Entra Model parameters" << std::endl;
 	modelParameters myParameters;
 		myParameters.name = 'phantom';
 
@@ -235,7 +243,7 @@ int main( int argc, char* argv[])
 	std::cout << std::endl;
 
 		// Los parametros se han de actualizar al hacer cada nueva transformaci'on!!!
-	
+
 	NiftySimEjecutable * nifty = new NiftySimEjecutable();
 		nifty->SetModelParameters( myParameters	);
 		nifty->SetOutputDir( output );
