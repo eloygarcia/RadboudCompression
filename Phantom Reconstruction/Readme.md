@@ -10,6 +10,8 @@ After performing the FE compression, we have to obtain the final compressed imag
 > 
 > CUDA_SDK_ROOT_DIR : NVIDIA_CUDA_11.3_Samples (**Eloy: Ordenador grande. En el laptop es CUDA 12**)
 > 
+> CUDA_SDK_COMMON_INCLUDE_DIR : NVIDIA_CUDA_11.3_Samples/Common
+> 
 > CUDA_SEPARABLE_COMPILATION: FALSE
 > 
 > USE_GPU_GP_CONTACT : TRUE

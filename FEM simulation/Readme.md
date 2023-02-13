@@ -57,6 +57,9 @@ Some arguments are defined as default.
 
 ## NiftySim
 
+
+> To compile niftysim:
+> 
 NiftySim usage:
 
 ```bash
