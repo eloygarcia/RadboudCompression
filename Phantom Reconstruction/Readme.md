@@ -22,6 +22,16 @@ After performing the FE compression, we have to obtain the final compressed imag
 > 
 > Use Docker?
 
+## Extract Compressed Mesh
+
+Function `extractCompressedMesh` is used to obtain the compressed mesh after the niftysim simulation
+
+```bash
+./getCompressedMesh <path-to-niftysim-output-mesh.vtk> <output-compressed-breast-mesh.vtk> 
+```
+- input:
+  - `niftysim-output-mesh.vtk` mesh after compression
+  - `<output-compressed-breast-mesh.vtk>` path to save the compressed breast mesh
 
 ## Reconstruct Image
 
@@ -30,13 +40,13 @@ Function `ReconstructImage` is used to obtain the compressed image.
 > :warning: This function was tested using vtk filedata version 2.0 but using vtk v9.0
 
 ```bash
-./ReconstructImage <path-to-niftysim-output-mesh.vtk> <path-to-breast-image.nrrd> <output-compressed-breast-mesh.vtk> <output-phantom-image.nrrd> 
+./ReconstructImage <iso2mesh-breast-mesh.vtk> <output-compressed-breast-mesh.vtk> <path-to-breast-image.nrrd>  <output-phantom-image.nrrd> 
 ```
 
-- input:
-  - `niftysim-output-mesh.vtk` mesh after compression 
+- inputs: 
+  - `<iso2mesh-breast-mesh.vtk>` path to the original mesh
+  - `<output-compressed-breast-mesh.vtk>` path to save the compressed breast mesh
   - `breast-image.nrrd` original breast image
-  - `<output-compressed-breast-mesh.vtk>` path to save the compressed breast mesh 
   - `<output-phantom-image.nrrd>`path to save the phantom
 
 - output:

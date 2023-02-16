@@ -18,142 +18,31 @@ typedef itk::Image< unsigned char, 3> ImageType;
 typedef itk::ImageFileReader< ImageType > ReaderType;
 typedef itk::ImageFileWriter< ImageType > WriterType;
 
-void extractGrid(vtkSmartPointer<vtkUnstructuredGrid> grid, 
-				 std::vector<float> &initial_points,
-				 std::vector<float> &final_points, 
-				 std::vector<int> &elements)
+void extractNodesAndElements(vtkUnstructuredGrid * mesh, std::vector<float> & nodes, std::vector<int> & elements)
 {
-	// =============================== EXTRACCION DE LA MALLA ===========================
-	// Points
-//	std::vector<double> initial_points; // = input_mri->getPoints_model();
-	vtkPoints * i_points = grid->GetPoints();
-	int NoP = grid->GetNumberOfPoints();
+    // W
+    nodes.clear();
+    elements.clear();
+
+    // Nodes Extraction
+    vtkPoints * i_points = mesh->GetPoints();
+    int NoP = mesh->GetNumberOfPoints();
 	double temp_point[3] = {0.0,0.0,0.0};
-	for (int i=0; i<NoP; i++)
+
+    for (int i=0; i<NoP; i++)
 	{
 		i_points->GetPoint(i,temp_point);
 
-		initial_points.push_back( temp_point[0] );
-		initial_points.push_back( temp_point[1] );
-		initial_points.push_back( temp_point[2] );
-	}
-	
-	// std::vector<double> final_points;
-	// for(int xx = 0; xx< initial_points.size(); xx++){	final_points.push_back( 0 ); }
-	
-	// Elements
+		nodes.push_back( temp_point[0] );
+		nodes.push_back( temp_point[1] );
+		nodes.push_back( temp_point[2] );
+	};
+
+
+    // Elements Extraction
 	int accumm = 0;
 	int minimum = 999999999;
-//	std::vector<int> elements; // = input_mri->getElements_model();
-	vtkCellArray * i_cells = grid->GetCells(); // LA PUTA QUE LOS PARIO !!
-	vtkIdList * pts = vtkIdList::New();
-	for(int i=0; i<i_cells->GetNumberOfCells(); i++)
-	{
-		i_cells->GetCell(accumm, pts);
-		for (int j=0; j<pts->GetNumberOfIds(); j++)
-		{
-			elements.push_back( pts->GetId(j) );
-			//if( pts->GetId(j) < minimum ) minimum = pts->GetId(j);
-		}
-		accumm = accumm + 1 + pts->GetNumberOfIds();
-	}
-
-	// Displacements
-	vtkSmartPointer<vtkDataArray> vtk_disp = grid->GetPointData()->GetArray(0);
-
-	double pt[3] = {0.0, 0.0, 0.0};
-	double d[3] = {0.0, 0.0, 0.0};
-	double temp[3] = {0.0, 0.0, 0.0};
-		pt[0] = 0.0; pt[1] = 0.0; pt[2] = 0.0;
-		d[0] = 0.0; d[1] = 0.0; d[2] = 0.0;
-		temp[0] = 0.0; temp[1] = 0.0; temp[2] = 0.0;
-
-	final_points.clear();
-
-	for(int i=0; i<i_points->GetNumberOfPoints(); i++)
-	{
-		i_points->GetPoint(i, pt);
-		vtk_disp->GetTuple(i, d);
-
-		temp[0] = pt[0] + d[0];
-		temp[1] = pt[1] + d[1];
-		temp[2] = pt[2] + d[2];
-
-		// f_points[ 3*i ] = temp[0];
-		// f_points[ 3*i +1 ] = temp[1];
-		// f_points[ 3*i +2 ] = temp[2];
-
-		final_points.push_back( temp[0] );
-		final_points.push_back( temp[1] );
-		final_points.push_back( temp[2] );
-	}
-
-};
-
-
-int main( int argc, char* argv[])
-{
-    if(argc<4)
-    {
-        std::cout << "Usage: " << argv[0] << " niftysim_mesh itk_image output_mesh output_image" << std::endl;
-        return EXIT_FAILURE;
-    }
-
-    /* VTK */
-    std::string mesh = argv[1];
-    std::string image = argv[2];
-    std::string output_mesh = argv[3];
-    std::string output_image = argv[4];
-
-    vtkSmartPointer< vtkUnstructuredGridReader > meshReader = vtkSmartPointer< vtkUnstructuredGridReader>::New();
-        meshReader->SetFileName( mesh.c_str());
-        meshReader->Update();
-
-/*
-    std::vector<float> initial_points;
-    std::vector<float> final_points;
-    std::vector<int> elements;
-    extractGrid( meshReader->GetOutput(), initial_points, 
-                        final_points, elements)
-*/
-    // Initial Points
-	std::vector<float> initial_points; // = input_mri->getPoints_model();
-	vtkPoints * i_points = meshReader->GetOutput()->GetPoints();
-	int NoP = meshReader->GetOutput()->GetNumberOfPoints();
-	double temp_point[3] = {0.0,0.0,0.0};
-
-    // Final Points
-
-    // Include a try catch HERE!!!
-    vtkDataArray* BoundCond = meshReader->GetOutput()->GetPointData()->GetScalars("displacements");//->GetArray(0);
-
-    std::cout << BoundCond->GetNumberOfTuples() << std::endl;
-    std::cout << meshReader->GetOutput()->GetNumberOfPoints() << std::endl;
-    double * disp;
-    std::vector<float> final_points;
-
-	for (int i=0; i<NoP; i++)
-	{
-		i_points->GetPoint(i,temp_point);
-
-		initial_points.push_back( temp_point[0] );
-		initial_points.push_back( temp_point[1] );
-		initial_points.push_back( temp_point[2] );
-
-        disp = BoundCond->GetTuple(i);
-        
-        final_points.push_back(temp_point[0]+disp[0]);
-        final_points.push_back(temp_point[1]+disp[1]);
-        final_points.push_back(temp_point[2]+disp[2]);
-	}
-
-	std::cout << "here 1" << std::endl;
-
-	// Elements
-	int accumm = 0;
-	int minimum = 999999999;
-	std::vector<int> elements; // = input_mri->getElements_model();
-	vtkCellArray * i_cells = meshReader->GetOutput()->GetCells(); // LA PUTA QUE LOS PARIO !!
+	vtkCellArray * i_cells = mesh->GetCells(); // LA PUTA QUE LOS PARIO !!
 	vtkIdList * pts = vtkIdList::New();
 
     for(int i=0; i<i_cells->GetNumberOfCells(); i++)
@@ -167,33 +56,43 @@ int main( int argc, char* argv[])
 		accumm = accumm + 1 + pts->GetNumberOfIds();
 	}
 
-    // Create Unstructured Grid
-    vtkSmartPointer< vtkUnstructuredGrid> u_grid = vtkSmartPointer< vtkUnstructuredGrid>::New();
-    vtkPoints * points = vtkPoints::New();
+}
 
-    points->SetNumberOfPoints( NoP );
-    for(int i=0; i<NoP; i++)
+int main( int argc, char* argv[])
+{
+    if(argc<4)
     {
-        temp_point[0] = final_points[3*i];
-        temp_point[1] = final_points[(3*i)+1];
-        temp_point[2] = final_points[(3*i)+2];
-
-        points->SetPoint(i, temp_point);
+        std::cout << "Usage: " << argv[0] << " original_mesh compressed_mesh original_itk_image phantom_image" << std::endl;
+        return EXIT_FAILURE;
     }
 
-    u_grid->SetPoints( points );
-    u_grid->SetCells( VTK_TETRA, i_cells);
+    std::string original_mesh = argv[1];
+    std::string compressed_mesh = argv[2];
+    std::string image = argv[3];
+    std::string output_image = argv[4];
 
-    // Write moved mesh
-    vtkSmartPointer< vtkUnstructuredGridWriter> meshWriter = vtkSmartPointer< vtkUnstructuredGridWriter>::New();
-        meshWriter->SetInputData(u_grid);
-        meshWriter->SetFileName( output_mesh.c_str() );
-        meshWriter->Update();
+    /* VTK */
+     /* original_mesh */
+    vtkSmartPointer< vtkUnstructuredGridReader > originalMeshReader = vtkSmartPointer< vtkUnstructuredGridReader>::New();
+        originalMeshReader->SetFileName( original_mesh.c_str());
+        originalMeshReader->Update();
 
-    std::cout << "Compressed mesh!" << std::endl;
+    std::vector<float> initial_points;
+    std::vector<int> elements;
+    extractNodesAndElements( originalMeshReader->GetOutput(), initial_points, elements);
+
+    /* compressed_mesh*/
+    vtkSmartPointer< vtkUnstructuredGridReader > compressedMeshReader = vtkSmartPointer< vtkUnstructuredGridReader>::New();
+        compressedMeshReader->SetFileName( compressed_mesh.c_str());
+        compressedMeshReader->Update();
+
+    std::vector<float> final_points;
+    std::vector<int> unused_elements;
+    extractNodesAndElements( compressedMeshReader->GetOutput(), final_points, unused_elements);
 
 
     /* ITK */
+    /* Read original image */
     ReaderType::Pointer imageReader = ReaderType::New();
         imageReader->SetFileName( image );
         try {
@@ -216,11 +115,12 @@ int main( int argc, char* argv[])
 	std::cout << "\t" << direction[1][0] << ", " << direction[1][1] << ", " << direction[1][2] << "] " << std::endl;
 	std::cout << "\t" << direction[2][0] << ", " << direction[2][1] << ", " << direction[2][2] << "] " << std::endl;
 
-    float spa[3] = {0.0,0.0,0.0};   
+    /* IMAGE RECONSTRUCTION */
+    float spa[3] = {0.0,0.0,0.0}; //just preparing the function
         spa[0] = spacing[0];
         spa[1] = spacing[1];
         spa[2] = spacing[2];
-    
+
     ImageType::Pointer new_image = ImageType::New();
     NewProjection * compressedImage = new NewProjection();
         compressedImage->getCompressedImage( initial_points, 
@@ -230,6 +130,7 @@ int main( int argc, char* argv[])
                                              new_image,
                                              spa);
 
+    /* WRITE COMPRESSED BREAST IMAGE */
 	WriterType::Pointer writer = WriterType::New();
 		writer->SetFileName( output_image );
 		writer->SetInput( new_image );
