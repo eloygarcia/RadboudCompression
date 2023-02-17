@@ -43,7 +43,6 @@ opt = varargin2struc('radbound', 10, 'distbound', 10, 'maxnode', 20); % to Koen
 % opt = varargin2struc('radbound', 15, 'distbound', 15, 'maxnode', 30); % to Marco (why?)
 
 [nodes, elements, faces] = cgalv2m(im, opt, 10);
-[nodes, elemnents] = clearmesh( nodes, elements(:,1:4) );
 nodes = nodes * spacing;
 
 boundaryConditions = nodes(:,1) < (min(nodes(:,1))+2);
@@ -60,8 +59,7 @@ All features were optimized to obtain a suitable number of elements using isotro
   - `breast.nrrd` path to the `.nrrd` image (I think)
   - `spacing` due to historical issues, it is defined to $0.273\times0.273\times0.273~mm^3$
   - `opt` arguments to define the mesh. I've found two versions (to Koen and to Marco) but I don't know which is the best
-  - `cgalv2m` the `iso2mesh`function used to create the mask 
-  - `clearmesh` we need to avoid isolated nodes on the mesh
+  - `cgalv2m` the `iso2mesh`function used to create the mask
   - `boundaryConditions` depends on the breast orientation
   - `writeVTK` is a function used to write the `.vtk` unstructured mesh with its information.
 
@@ -70,7 +68,16 @@ All features were optimized to obtain a suitable number of elements using isotro
 
 The exposed pipeline need to be repeated for each image. 
 
+### CLear Mesh
 
+```bash
+./cleaningmesh <path-to-mesh.vtk>
+```
+
+This function is used to avoid isolated point in the mesh. 
+
+> :warning: Be careful! The function rewrite the original mesh
+> 
 
 ### New Model Extraction
 
