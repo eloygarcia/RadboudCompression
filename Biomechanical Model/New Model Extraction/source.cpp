@@ -4,9 +4,11 @@
 // Itk
 #include "itkImage.h"
 #include "itkImageFileReader.h"
+#include "itkBinaryThresholdImageFilter.h"
 
 typedef itk::Image<char,3> ImageType;
 typedef itk::ImageFileReader<ImageType> ReaderType;
+typedef itk::BinaryThresholdImageFilter<ImageType, ImageType> ThresholdType;
 
 // Itk-Vtk Glue
 #include "itkImageToVTKImageFilter.h"
@@ -24,16 +26,19 @@ typedef itk::ImageToVTKImageFilter<ImageType> ItktoVtkType;
 #include "vtkIdTypeArray.h"
 
 #include "vtkTetra.h"
-	
+
+#include "vtkStaticCleanUnstructuredGrid.h"
+
 // CGAL
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
 #include <CGAL/Mesh_triangulation_3.h>
 #include <CGAL/Mesh_complex_3_in_triangulation_3.h>
 #include <CGAL/Mesh_criteria_3.h>
 #include <CGAL/Labeled_mesh_domain_3.h>
+#include <CGAL/Mesh_3/generate_label_weights.h>
 #include <CGAL/make_mesh_3.h>
 #include <CGAL/Image_3.h>
-#include <CGAL/read_vtk_image_data.h>
+#include <CGAL/IO/read_vtk_image_data.h>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/functional.hpp>
@@ -72,6 +77,7 @@ void usage()
     std::cout << " \t --facet_distance : (default 1)" << std::endl;
     std::cout << " \t --cell_radius_edge_ratio : (default 1)" << std::endl;
     std::cout << " \t --cell_size : (default 5)" << std::endl;
+    std::cout << " \t --bc_thickness : (default 2" << std::endl;
 };
 
 struct argum{
@@ -82,6 +88,7 @@ struct argum{
         facet_distance = 1;
         cell_radius_edge_ratio = 1;
         cell_size = 5;
+        bc_thickness = 2;
     };
     ~argum(){};
 
@@ -91,6 +98,7 @@ struct argum{
     double facet_distance;
     double cell_radius_edge_ratio;
     double cell_size;
+    double bc_thickness;
 };
 
 argum argParser(int argc, char* argv[])
@@ -104,6 +112,7 @@ argum argParser(int argc, char* argv[])
         if( strcmp(argv[i],"--facet_distance")==0 ) argumentos.facet_distance = atof(argv[i+1]);
         if( strcmp(argv[i],"--cell_radius_edge_ratio")==0 ) argumentos.cell_radius_edge_ratio = atof(argv[i+1]);
         if( strcmp(argv[i],"--cell_size")==0 ) argumentos.cell_size = atof(argv[i+1]);
+        if( strcmp(argv[i]),"--bc_thickness")==0 ) argumentos.bc_thickness = atof(argv[i+1]);
     }
     return argumentos;
 }
@@ -341,7 +350,7 @@ void writeVTKmesh( std::string outputfilename, C3t3 c3t3)
 	    ++i;
     }
 
-    /*
+    /* Set Boundary conditions
 	vtkIntArray * data = vtkIntArray::New();
 		data->SetName("PectoralBC");
 	bool is_inside = false;
@@ -373,8 +382,25 @@ void writeVTKmesh( std::string outputfilename, C3t3 c3t3)
 	// grid->GetPointData()->SetScalars( data ); // BoundaryConditions
 	// grid->GetCellData()->SetScalars( tissues ); // Tissues
 
+    /// Cleaning the mesh!
+    std::cout << std::endl;
+    std::cout << "Initial number of points: "<< meshReader->GetOutput()->GetNumberOfPoints() << std::endl;
+    std::cout << "Initial number of cells: "<< meshReader->GetOutput()->GetNumberOfCells() << std::endl;
+
+    vtkSmartPointer< vtkStaticCleanUnstructuredGrid > cleaningMesh = vtkSmartPointer< vtkStaticCleanUnstructuredGrid>::New();
+        cleaningMesh->SetInputData(grid);
+        cleaningMesh->ToleranceIsAbsoluteOn();
+        cleaningMesh->SetTolerance(0.0);
+        cleaningMesh->RemoveUnusedPointsOn();
+        cleaningMesh->Update();
+
+    std::cout << std::endl;
+    std::cout << "Final number of points: "<< cleaningMesh->GetOutput()->GetNumberOfPoints() << std::endl;
+    std::cout << "Final number of cells: "<< cleaningMesh->GetOutput()->GetNumberOfCells() << std::endl;
+
+    /// Writing the mesh
 	vtkSmartPointer<vtkUnstructuredGridWriter> initialGridWriter = vtkSmartPointer<vtkUnstructuredGridWriter>::New();
-		initialGridWriter->SetInputData( grid );
+		initialGridWriter->SetInputData( cleaningMesh->GetOutput() );
 		initialGridWriter->SetFileName( outputfilename.c_str() );
 		initialGridWriter->Update();
 		initialGridWriter->Write();
@@ -420,8 +446,10 @@ int main(int argc, char* argv[])
     std::cout << " Facet Distance : " << argumentos.facet_distance << std::endl;
     std::cout << " Cell Radius-Edge Ratio : " << argumentos.cell_radius_edge_ratio << std::endl;
     std::cout << " Cell Size : " << argumentos.cell_size << std::endl;
+    std::cout << " Boundary Condition Thickness : " << argumentos.bc_thickness << std::endl;
     std::cout << std::endl;
 
+    // Itk Image
     ReaderType::Pointer reader = ReaderType::New();
         reader->SetFileName( inputfilename );
         try{
@@ -432,10 +460,19 @@ int main(int argc, char* argv[])
             return EXIT_FAILURE;
         }
 
+    ThresholdType::Pointer threshold = ThresholdType::New();
+        threshold->SetInput( reader->GetOutput());
+        threshold->SetOutsideValue(0);
+        threshold->SetInsideValue(1);
+        threshold->SetLowerThreshold(1);
+        threshold->SetUpperThreshold(5);
+        threshold->Update();
+
+
     std::cout << "itk to vtk" << std::endl;
     // Itk to Vtk
     ItktoVtkType::Pointer itkToVtk = ItktoVtkType::New();
-        itkToVtk->SetInput( reader->GetOutput() );
+        itkToVtk->SetInput( threshold->GetOutput() );
         try{
             itkToVtk->Update();
         } catch( itk::ExceptionObject & excp) {
@@ -454,10 +491,17 @@ int main(int argc, char* argv[])
 
     std::cout << "labeled Image to mesh" << std::endl;
     // Labeled image to Mesh
+
+
     using namespace CGAL::parameters;
+
+    //const float sigma = 5.f;
+    //CGAL::Image_3 img_weights = CGAL::Mesh_3::generate_label_weights(image, sigma);
+
     Mesh_domain domain = Mesh_domain::create_labeled_image_mesh_domain(
         image,
-        value_outside = argumentos.value_outside
+        value_outside = argumentos.value_outside,
+        relative_error_bound = 1e-6
     );
 
     // Mesh Criteria
