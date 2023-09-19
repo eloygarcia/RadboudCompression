@@ -5,10 +5,13 @@
 #include "itkImage.h"
 #include "itkImageFileReader.h"
 #include "itkBinaryThresholdImageFilter.h"
+#include "itkImageFileWriter.h"
 
 typedef itk::Image<char,3> ImageType;
 typedef itk::ImageFileReader<ImageType> ReaderType;
 typedef itk::BinaryThresholdImageFilter<ImageType, ImageType> ThresholdType;
+typedef itk::ImageFileWriter< ImageType > WriterType;
+
 
 // Itk-Vtk Glue
 #include "itkImageToVTKImageFilter.h"
@@ -63,32 +66,19 @@ typedef typename Tr::Finite_vertices_iterator Finite_vertices_iterator;
 typedef typename Tr::Vertex_handle Vertex_handle;
 typedef typename Tr::Point Point_3;
 
-void usage()
-{
-    std::cout << std::endl;
-    std::cout << "inputfilename outputfilename arguments" << std::endl;
-    std::cout << std::endl;
-    std::cout << "- inputfilename : Name of the original volume (3D image) in itk format -i.e. .nrrd or .mhd" << std::endl;
-    std::cout << "- outputfilename :  Name of the mesh file with extesion .inp or .vtk"  << std::endl;
-    std::cout << "- arguments :" << std::endl;
-    std::cout << " \t --value_outside : (default 0)" << std::endl;
-    std::cout << " \t --facet_angle : (default 30)" << std::endl;
-    std::cout << " \t --facet_size : (default 5)" << std::endl;
-    std::cout << " \t --facet_distance : (default 1)" << std::endl;
-    std::cout << " \t --cell_radius_edge_ratio : (default 1)" << std::endl;
-    std::cout << " \t --cell_size : (default 5)" << std::endl;
-    std::cout << " \t --bc_thickness : (default 2" << std::endl;
-};
-
 struct argum{
     argum() {
         value_outside = 0;
         facet_angle = 30;
         facet_size = 5;
         facet_distance = 1;
-        cell_radius_edge_ratio = 1;
+        cell_radius_edge_ratio = 2;
         cell_size = 5;
         bc_thickness = 2;
+
+        pixel_spacing.push_back(0.273); // X size
+        pixel_spacing.push_back(0.273); // Y size
+        pixel_spacing.push_back(0.273); // Z size
     };
     ~argum(){};
 
@@ -99,6 +89,7 @@ struct argum{
     double cell_radius_edge_ratio;
     double cell_size;
     double bc_thickness;
+    std::vector<float> pixel_spacing;
 };
 
 argum argParser(int argc, char* argv[])
@@ -112,11 +103,67 @@ argum argParser(int argc, char* argv[])
         if( strcmp(argv[i],"--facet_distance")==0 ) argumentos.facet_distance = atof(argv[i+1]);
         if( strcmp(argv[i],"--cell_radius_edge_ratio")==0 ) argumentos.cell_radius_edge_ratio = atof(argv[i+1]);
         if( strcmp(argv[i],"--cell_size")==0 ) argumentos.cell_size = atof(argv[i+1]);
-        if( strcmp(argv[i]),"--bc_thickness")==0 ) argumentos.bc_thickness = atof(argv[i+1]);
+        if( strcmp(argv[i], "--bc_thickness")==0 ) argumentos.bc_thickness = atof(argv[i+1]);
+        if( strcmp(argv[i], "--pixel_spacing")==0 ){
+            argumentos.pixel_spacing[0] = atof(argv[i+1]);
+            argumentos.pixel_spacing[1] = atof(argv[i+2]);
+            argumentos.pixel_spacing[2] = atof(argv[i+3]);
+        }
     }
     return argumentos;
 }
 
+void usage()
+{
+    argum argumentos;
+    std::cout << std::endl;
+    std::cout << "inputfilename outputfilename arguments" << std::endl;
+    std::cout << std::endl;
+    std::cout << "- inputfilename : Name of the original volume (3D image) in itk format -i.e. .nrrd or .mhd" << std::endl;
+    std::cout << "- outputfilename :  Name of the mesh file with extesion .inp or .vtk"  << std::endl;
+    std::cout << "- arguments :" << std::endl;
+    std::cout << " \t --value_outside : (default "<< argumentos.value_outside << ")" << std::endl;
+    std::cout << " \t --facet_angle : (default "<< argumentos.facet_angle << ")" << std::endl;
+    std::cout << " \t --facet_size : (default "<< argumentos.facet_size << ")" << std::endl;
+    std::cout << " \t --facet_distance : (default "<< argumentos.facet_distance << ")" << std::endl;
+    std::cout << " \t --cell_radius_edge_ratio : (default "<< argumentos.cell_radius_edge_ratio << ")" << std::endl;
+    std::cout << " \t --cell_size : (default "<< argumentos.cell_size << ")" << std::endl;
+    std::cout << " \t --bc_thickness : (default "<< argumentos.bc_thickness << ")" << std::endl;
+    std::cout << " \t --pixel_spacing : (default " << argumentos.pixel_spacing[0] << ", " << argumentos.pixel_spacing[1] << ", " << argumentos.pixel_spacing[0] << ")" << std::endl;
+};
+
+int updatePhysicalInformation(ImageType::Pointer & image, std::vector<float> pixel_spacing, std::string inputfilename)
+{
+    ImageType::SizeType size = image->GetLargestPossibleRegion().GetSize();
+    ImageType::PointType  origin;
+        origin[0] = 0.0;
+        origin[1] = 0.0;
+        origin[2] = 0.0;
+    image->SetOrigin( origin );
+    ImageType::DirectionType direction;
+        direction.SetIdentity();
+    image->SetDirection( direction );
+    ImageType::SpacingType spacing;
+        spacing[0] = pixel_spacing[0];
+        spacing[1] = pixel_spacing[1];
+        spacing[2] = pixel_spacing[2];
+    image->SetSpacing( spacing );
+
+    std::cout << "Writing " << inputfilename.substr(0, inputfilename.length()-5) << ".nrrd image" << std::endl;
+
+    WriterType::Pointer writer = WriterType::New();
+        writer->SetFileName( inputfilename.substr(0, inputfilename.length()-5) +".nrrd" );
+        writer->SetInput( image );
+        writer->UseCompressionOn();
+        try{
+            writer->Update();
+        } catch( itk::ExceptionObject & excp ) {
+            std::cout << "Writer Exception Object!" << std::endl;
+            std::cout << excp << std::endl;
+            return EXIT_FAILURE;
+        };
+    return 0;
+}
 
 void writeInpFile(std::string outputfilename, C3t3 c3t3)
 {
@@ -277,10 +324,34 @@ void writeInpFile(std::string outputfilename, C3t3 c3t3)
 }
 
 
-void writeVTKmesh( std::string outputfilename, C3t3 c3t3)
+void vtk_getBoundaryConditions(vtkPoints points, vtkIntArray * data)
 {
-    vtkSmartPointer<vtkUnstructuredGrid> grid = vtkSmartPointer<vtkUnstructuredGrid>::New();
+    int numberofpoints = points->getNumberOfPoints();
+    //vtkIntArray * data = vtkIntArray::New();
+	data->SetName("PectoralBC");
+	bbox = points.GetBounds()
+	std::cout << bbox << std::endl;
 
+	/*
+	bool is_inside = false;
+	for(int bc = 0; bc< numberofpoints; bc++ )	{
+		is_inside = false;
+		for(int j=0; j<bC_list.size(); j++){
+			if (bc==bC_list[j])
+			{
+					is_inside = true;
+					std::cout << "Is INSIDE " << bc << std::endl;
+			}
+		}
+
+		if(is_inside) data->InsertNextValue(1);
+		else data->InsertNextValue(0);
+	}
+	*/
+}
+
+void vtkMeshWithBC(C3t3 c3t3, vtkSmartPointer<vtkUnstructuredGrid>& vtk_umesh)
+{
     Tr tr = c3t3.triangulation();
 	//std::cout << "createUnstructuredGrid" << std::endl;
     int numberofpoints = tr.number_of_vertices();
@@ -288,6 +359,9 @@ void writeVTKmesh( std::string outputfilename, C3t3 c3t3)
     int numberofcells = c3t3.number_of_cells();
     //std::cout << "number of cells " << numberofcells << std::endl;
 
+    // temporal vectors for boundary conditions and element labelling
+    std::vector<float> i_points;
+    std::vector<int> elements;
 	// ========================================================
     // Points!
 	vtkPoints * points = vtkPoints::New();
@@ -302,11 +376,17 @@ void writeVTKmesh( std::string outputfilename, C3t3 c3t3)
     int i = 0;
     std::map<Point_3, int> V;
     for (Tr::All_vertices_iterator it=tr.all_vertices_begin(); it != tr.all_vertices_end(); ++it)
-    {   
-        if( i>0 ){	
+    {
+        if( i>0 ){
             auxPoint[0] = it->point()[0];
             auxPoint[1] = it->point()[1];
             auxPoint[2] = it->point()[2];
+
+            // temporal nodes vector
+            i_points.push_back(auxPoint[0])
+            i_points.push_back(auxPoint[1])
+            i_points.push_back(auxPoint[2])
+            //
 
             points->SetPoint(i-1, auxPoint);
 
@@ -339,11 +419,162 @@ void writeVTKmesh( std::string outputfilename, C3t3 c3t3)
 	    // std::cout<<"Point #"<<i<<" : "<<v0->point()<<" ; "<<v1->point()<<" ; "<<v2->point()<<" ; "<<v3->point()<<std::endl;
 	    // std::cout<<"Indices: "<<V[v0->point()]<<"/"<<V[v1->point()]<<"/"<<V[v2->point()]<<"/"<<V[v3->point()]<<std::endl;
 
-        //tuple[0] = 4; 
+        //tuple[0] = 4;
 		tuple[0] = V[v0->point()];
 		tuple[1] = V[v1->point()];
 		tuple[2] = V[v2->point()];
 		tuple[3] = V[v3->point()];
+
+		// temporal element vector
+		elements.push_back( tuple[0] )
+		elements.push_back( tuple[1] )
+		elements.push_back( tuple[2] )
+		elements.push_back( tuple[3] )
+		///
+
+        cells->InsertNextCell(4,tuple);
+
+	    ++i;
+    }
+
+    vtkIntArray * bc_data = vtkIntArray::New();
+    vtk_getBoundaryConditions(points, bc_data)
+
+    /* Set Boundary conditions
+	vtkIntArray * data = vtkIntArray::New();
+		data->SetName("PectoralBC");
+	bool is_inside = false;
+	for(int bc = 0; bc< numberofpoints; bc++ )	{
+		is_inside = false;
+		for(int j=0; j<bC_list.size(); j++){
+			if (bc==bC_list[j])
+			{
+					is_inside = true;
+					std::cout << "Is INSIDE " << bc << std::endl;
+			}
+		}
+
+		if(is_inside) data->InsertNextValue(1);
+		else data->InsertNextValue(0);
+	}
+
+	//vtkIdType * id_tissue;
+	vtkIntArray * tissues = vtkIntArray::New();
+		tissues->SetName("Tissue");
+	for( int t=0; t<tissue_list.size(); t++){
+		tissues->InsertNextValue(  tissue_list[t] );
+	}
+    */
+
+	vtk_umesh->SetPoints(points); // Points
+	vtk_umesh->SetCells(VTK_TETRA, cells); // Cells
+
+	// grid->GetPointData()->SetScalars( data ); // BoundaryConditions
+	// grid->GetCellData()->SetScalars( tissues ); // Tissues
+
+    /// Cleaning the mesh!
+    std::cout << std::endl;
+    std::cout << "Initial number of points: "<< grid->GetNumberOfPoints() << std::endl;
+    std::cout << "Initial number of cells: "<< grid->GetNumberOfCells() << std::endl;
+
+    vtkSmartPointer< vtkStaticCleanUnstructuredGrid > cleaningMesh = vtkSmartPointer< vtkStaticCleanUnstructuredGrid>::New();
+        cleaningMesh->SetInputData(grid);
+        cleaningMesh->ToleranceIsAbsoluteOn();
+        cleaningMesh->SetTolerance(0.0);
+        cleaningMesh->RemoveUnusedPointsOn();
+        cleaningMesh->Update();
+
+    std::cout << std::endl;
+    std::cout << "Final number of points: "<< cleaningMesh->GetOutput()->GetNumberOfPoints() << std::endl;
+    std::cout << "Final number of cells: "<< cleaningMesh->GetOutput()->GetNumberOfCells() << std::endl;
+
+}
+
+void writeVTKmesh( std::string outputfilename, C3t3 c3t3)
+{
+    vtkSmartPointer<vtkUnstructuredGrid> grid = vtkSmartPointer<vtkUnstructuredGrid>::New();
+
+    Tr tr = c3t3.triangulation();
+	//std::cout << "createUnstructuredGrid" << std::endl;
+    int numberofpoints = tr.number_of_vertices();
+    //std::cout << "number of points " << numberofpoints << std::endl;
+    int numberofcells = c3t3.number_of_cells();
+    //std::cout << "number of cells " << numberofcells << std::endl;
+
+    // temporal vectors for boundary conditions and element labelling
+    std::vector<float> i_points;
+    std::vector<int> elements;
+	// ========================================================
+    // Points!
+	vtkPoints * points = vtkPoints::New();
+	vtkCellArray * cells = vtkCellArray::New();
+
+	points->SetNumberOfPoints( numberofpoints );
+	double * auxPoint = new double[3];
+		auxPoint[0] = 0.0;
+		auxPoint[1] = 0.0;
+		auxPoint[2] = 0.0;
+
+    int i = 0;
+    std::map<Point_3, int> V;
+    for (Tr::All_vertices_iterator it=tr.all_vertices_begin(); it != tr.all_vertices_end(); ++it)
+    {
+        if( i>0 ){
+            auxPoint[0] = it->point()[0];
+            auxPoint[1] = it->point()[1];
+            auxPoint[2] = it->point()[2];
+
+            // temporal nodes vector
+            i_points.push_back(auxPoint[0])
+            i_points.push_back(auxPoint[1])
+            i_points.push_back(auxPoint[2])
+            //
+
+            points->SetPoint(i-1, auxPoint);
+
+            V[it->point()] = i-1;
+
+
+        };
+	    ++i;
+    }
+
+    // Cell!
+	vtkSmartPointer<vtkIdTypeArray> idCells = vtkSmartPointer<vtkIdTypeArray>::New();
+
+	idCells->SetNumberOfComponents(4);
+	idCells->SetNumberOfTuples( numberofcells );
+
+	vtkIdType* tuple = new vtkIdType[4];
+
+    i = 0;
+	C3t3::Vertex_handle v0;
+	C3t3::Vertex_handle v1;
+	C3t3::Vertex_handle v2;
+	C3t3::Vertex_handle v3;
+
+    for (C3t3::Cell_iterator it = c3t3.cells_in_complex_begin(); it != c3t3.cells_in_complex_end(); ++it)
+    {
+	    const Tr::Cell c(*it);
+	    v0 = c.vertex(0);
+	    v1 = c.vertex(1);
+	    v2 = c.vertex(2);
+	    v3 = c.vertex(3);
+	    // std::cout<<"Point #"<<i<<" : "<<v0->point()<<" ; "<<v1->point()<<" ; "<<v2->point()<<" ; "<<v3->point()<<std::endl;
+	    // std::cout<<"Indices: "<<V[v0->point()]<<"/"<<V[v1->point()]<<"/"<<V[v2->point()]<<"/"<<V[v3->point()]<<std::endl;
+
+        //tuple[0] = 4;
+		tuple[0] = V[v0->point()];
+		tuple[1] = V[v1->point()];
+		tuple[2] = V[v2->point()];
+		tuple[3] = V[v3->point()];
+
+		// temporal element vector
+		elements.push_back( tuple[0] )
+		elements.push_back( tuple[1] )
+		elements.push_back( tuple[2] )
+		elements.push_back( tuple[3] )
+		///
 
         cells->InsertNextCell(4,tuple);
 
@@ -357,7 +588,7 @@ void writeVTKmesh( std::string outputfilename, C3t3 c3t3)
 	for(int bc = 0; bc< numberofpoints; bc++ )	{
 		is_inside = false;
 		for(int j=0; j<bC_list.size(); j++){
-			if (bc==bC_list[j]) 
+			if (bc==bC_list[j])
 			{
 					is_inside = true;
 					std::cout << "Is INSIDE " << bc << std::endl;
@@ -367,7 +598,7 @@ void writeVTKmesh( std::string outputfilename, C3t3 c3t3)
 		if(is_inside) data->InsertNextValue(1);
 		else data->InsertNextValue(0);
 	}
-	
+
 	//vtkIdType * id_tissue;
 	vtkIntArray * tissues = vtkIntArray::New();
 		tissues->SetName("Tissue");
@@ -384,8 +615,8 @@ void writeVTKmesh( std::string outputfilename, C3t3 c3t3)
 
     /// Cleaning the mesh!
     std::cout << std::endl;
-    std::cout << "Initial number of points: "<< meshReader->GetOutput()->GetNumberOfPoints() << std::endl;
-    std::cout << "Initial number of cells: "<< meshReader->GetOutput()->GetNumberOfCells() << std::endl;
+    std::cout << "Initial number of points: "<< grid->GetNumberOfPoints() << std::endl;
+    std::cout << "Initial number of cells: "<< grid->GetNumberOfCells() << std::endl;
 
     vtkSmartPointer< vtkStaticCleanUnstructuredGrid > cleaningMesh = vtkSmartPointer< vtkStaticCleanUnstructuredGrid>::New();
         cleaningMesh->SetInputData(grid);
@@ -406,7 +637,6 @@ void writeVTKmesh( std::string outputfilename, C3t3 c3t3)
 		initialGridWriter->Write();
 }
 
-
 void writeMesh(std::string outputfilename, C3t3 c3t3)
 {
     if( outputfilename.compare(outputfilename.size()-4,4,".inp")==0 )  {
@@ -425,9 +655,10 @@ void writeMesh(std::string outputfilename, C3t3 c3t3)
     }
 }
 
-
 int main(int argc, char* argv[])
 {
+    argum argumentos;
+
     if(argc==1 || strcmp(argv[1],"--h")==0 || strcmp(argv[1],"--help")==0 ) {
         usage();
         return EXIT_SUCCESS;
@@ -435,7 +666,6 @@ int main(int argc, char* argv[])
     
     std::string inputfilename = argv[1];
     std::string outputfilename = argv[2];
-    argum argumentos;
 
     if(argc>3) argumentos = argParser(argc, argv);
     
@@ -447,7 +677,9 @@ int main(int argc, char* argv[])
     std::cout << " Cell Radius-Edge Ratio : " << argumentos.cell_radius_edge_ratio << std::endl;
     std::cout << " Cell Size : " << argumentos.cell_size << std::endl;
     std::cout << " Boundary Condition Thickness : " << argumentos.bc_thickness << std::endl;
+    std::cout << " Image spacing : [" << argumentos.pixel_spacing[0] << ", " << argumentos.pixel_spacing[1] << ", " << argumentos.pixel_spacing[0] << "]" << std::endl;
     std::cout << std::endl;
+
 
     // Itk Image
     ReaderType::Pointer reader = ReaderType::New();
@@ -460,8 +692,20 @@ int main(int argc, char* argv[])
             return EXIT_FAILURE;
         }
 
+    ImageType::Pointer img = reader->GetOutput();
+
+    // Physical information
+    std::string subname = inputfilename.substr( inputfilename.length()-5, inputfilename.length());
+    std::cout << subname.c_str() << std::endl;
+
+    if(strcmp(subname.c_str(),".nrrd")!=0 || strcmp(subname.c_str(),".mhd")!=0 ){
+        int e = updatePhysicalInformation(img, argumentos.pixel_spacing, inputfilename);
+        if(e!0) return EXIT_FAILURE;
+    };
+
+    // Thresholding
     ThresholdType::Pointer threshold = ThresholdType::New();
-        threshold->SetInput( reader->GetOutput());
+        threshold->SetInput( img );
         threshold->SetOutsideValue(0);
         threshold->SetInsideValue(1);
         threshold->SetLowerThreshold(1);
@@ -481,6 +725,7 @@ int main(int argc, char* argv[])
             return EXIT_FAILURE;
         }
 
+
     std::cout << "vtk to cgal" << std::endl;
     // Vtk to CGAL
     CGAL::Image_3 image = CGAL::read_vtk_image_data( itkToVtk->GetOutput() );
@@ -491,8 +736,6 @@ int main(int argc, char* argv[])
 
     std::cout << "labeled Image to mesh" << std::endl;
     // Labeled image to Mesh
-
-
     using namespace CGAL::parameters;
 
     //const float sigma = 5.f;
@@ -533,7 +776,9 @@ int main(int argc, char* argv[])
     std::cout << std::endl;
 
     // Write mesh
-    writeMesh( outputfilename, c3t3);
+    //writeMesh( outputfilename, c3t3);
+    vtkSmartPointer<vtkUnstructuredGrid> vtk_umesh = vtkSmartPointer<vtkUnstructuredGrid>::New();
+    vtkMeshWithBC(c3t3, vtk_umesh);
 
     return EXIT_SUCCESS;
 }

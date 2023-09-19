@@ -124,7 +124,7 @@ int main( int argc, char* argv[])
 
 	std::cout << "Sale Threshold" << std::endl;
 	*/
-		std::cout << "entra resampling!" << std::endl;
+	std::cout << "entra resampling!" << std::endl;
 	TransformType::Pointer transform = TransformType::New();
 	NNInterpolationType::Pointer interpolator = NNInterpolationType::New();
 	ResamplingType::Pointer resampleFilter = ResamplingType::New();
