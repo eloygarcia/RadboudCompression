@@ -4,7 +4,7 @@
 
 #include "itkFlipImageFilter.h"
 
-typedef itk::Image<char, 3> ImageType;
+typedef itk::Image<unsigned char, 3> ImageType;
 typedef itk::ImageFileReader< ImageType > ReaderType;
 typedef itk::ImageFileWriter< ImageType > WriterType;
 
