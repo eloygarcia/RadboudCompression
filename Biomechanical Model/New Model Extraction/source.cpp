@@ -7,7 +7,7 @@
 #include "itkBinaryThresholdImageFilter.h"
 #include "itkImageFileWriter.h"
 
-typedef itk::Image<char,3> ImageType;
+typedef itk::Image<unsigned char,3> ImageType;
 typedef itk::ImageFileReader<ImageType> ReaderType;
 typedef itk::BinaryThresholdImageFilter<ImageType, ImageType> ThresholdType;
 typedef itk::ImageFileWriter< ImageType > WriterType;
@@ -24,6 +24,7 @@ typedef itk::ImageToVTKImageFilter<ImageType> ItktoVtkType;
 
 #include "vtkPoints.h"
 #include "vtkCell.h"
+#include "vtkCellIterator.h"
 #include "vtkIdList.h"
 #include "vtkCellArray.h"
 #include "vtkIdTypeArray.h"
@@ -31,6 +32,8 @@ typedef itk::ImageToVTKImageFilter<ImageType> ItktoVtkType;
 #include "vtkTetra.h"
 
 #include "vtkStaticCleanUnstructuredGrid.h"
+
+#include "vtkCellCenters.h"
 
 // CGAL
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -70,15 +73,17 @@ struct argum{
     argum() {
         value_outside = 0;
         facet_angle = 30;
-        facet_size = 5;
+        facet_size = 2;
         facet_distance = 1;
         cell_radius_edge_ratio = 2;
-        cell_size = 5;
+        cell_size = 2;
         bc_thickness = 2;
 
         pixel_spacing.push_back(0.273); // X size
         pixel_spacing.push_back(0.273); // Y size
         pixel_spacing.push_back(0.273); // Z size
+
+        pectoral_muscle = 0;
     };
     ~argum(){};
 
@@ -90,6 +95,7 @@ struct argum{
     double cell_size;
     double bc_thickness;
     std::vector<float> pixel_spacing;
+    int pectoral_muscle;
 };
 
 argum argParser(int argc, char* argv[])
@@ -108,7 +114,10 @@ argum argParser(int argc, char* argv[])
             argumentos.pixel_spacing[0] = atof(argv[i+1]);
             argumentos.pixel_spacing[1] = atof(argv[i+2]);
             argumentos.pixel_spacing[2] = atof(argv[i+3]);
-        }
+        };
+        if(strcmp(argv[i],"--pectoral_muscle")==0){
+            argumentos.pectoral_muscle = atoi(argv[i+1]);
+        };
     }
     return argumentos;
 }
@@ -130,6 +139,7 @@ void usage()
     std::cout << " \t --cell_size : (default "<< argumentos.cell_size << ")" << std::endl;
     std::cout << " \t --bc_thickness : (default "<< argumentos.bc_thickness << ")" << std::endl;
     std::cout << " \t --pixel_spacing : (default " << argumentos.pixel_spacing[0] << ", " << argumentos.pixel_spacing[1] << ", " << argumentos.pixel_spacing[0] << ")" << std::endl;
+    std::cout << " \t --pectoral_muscle : (default 0 -i.e. no pectoral muscle-)" << std::endl;
 };
 
 int updatePhysicalInformation(ImageType::Pointer & image, std::vector<float> pixel_spacing, std::string inputfilename)
@@ -149,7 +159,7 @@ int updatePhysicalInformation(ImageType::Pointer & image, std::vector<float> pix
         spacing[2] = pixel_spacing[2];
     image->SetSpacing( spacing );
 
-    std::cout << "Writing " << inputfilename.substr(0, inputfilename.length()-5) << ".nrrd image" << std::endl;
+    std::cout << "Writing " << inputfilename.substr(0, inputfilename.length()-5) << "-a.nrrd image" << std::endl;
 
     WriterType::Pointer writer = WriterType::New();
         writer->SetFileName( inputfilename.substr(0, inputfilename.length()-5) +".nrrd" );
@@ -324,12 +334,12 @@ void writeInpFile(std::string outputfilename, C3t3 c3t3)
 }
 
 
-void vtk_getBoundaryConditions(vtkPoints points, vtkIntArray * data)
+void vtk_getBoundaryConditions(vtkPoints * points, vtkIntArray * data)
 {
-    int numberofpoints = points->getNumberOfPoints();
+    int numberofpoints = points->GetNumberOfPoints();
     //vtkIntArray * data = vtkIntArray::New();
 	data->SetName("PectoralBC");
-	bbox = points.GetBounds()
+	double * bbox = points->GetBounds();
 	std::cout << bbox << std::endl;
 
 	/*
@@ -383,9 +393,9 @@ void vtkMeshWithBC(C3t3 c3t3, vtkSmartPointer<vtkUnstructuredGrid>& vtk_umesh)
             auxPoint[2] = it->point()[2];
 
             // temporal nodes vector
-            i_points.push_back(auxPoint[0])
-            i_points.push_back(auxPoint[1])
-            i_points.push_back(auxPoint[2])
+            i_points.push_back(auxPoint[0]);
+            i_points.push_back(auxPoint[1]);
+            i_points.push_back(auxPoint[2]);
             //
 
             points->SetPoint(i-1, auxPoint);
@@ -426,10 +436,10 @@ void vtkMeshWithBC(C3t3 c3t3, vtkSmartPointer<vtkUnstructuredGrid>& vtk_umesh)
 		tuple[3] = V[v3->point()];
 
 		// temporal element vector
-		elements.push_back( tuple[0] )
-		elements.push_back( tuple[1] )
-		elements.push_back( tuple[2] )
-		elements.push_back( tuple[3] )
+		elements.push_back( tuple[0] );
+		elements.push_back( tuple[1] );
+		elements.push_back( tuple[2] );
+		elements.push_back( tuple[3] );
 		///
 
         cells->InsertNextCell(4,tuple);
@@ -438,7 +448,7 @@ void vtkMeshWithBC(C3t3 c3t3, vtkSmartPointer<vtkUnstructuredGrid>& vtk_umesh)
     }
 
     vtkIntArray * bc_data = vtkIntArray::New();
-    vtk_getBoundaryConditions(points, bc_data)
+    vtk_getBoundaryConditions(points, bc_data);
 
     /* Set Boundary conditions
 	vtkIntArray * data = vtkIntArray::New();
@@ -469,16 +479,27 @@ void vtkMeshWithBC(C3t3 c3t3, vtkSmartPointer<vtkUnstructuredGrid>& vtk_umesh)
 	vtk_umesh->SetPoints(points); // Points
 	vtk_umesh->SetCells(VTK_TETRA, cells); // Cells
 
+
+
+//vtkCellIterator * iter = vtk_umesh->NewCellIterator();
+
+//for(iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextCell()){
+//    std::cout << iter->GetCellType() << std::endl;
+     //vtkTetra tetra = iter->Get
+     // iter->GetCenter(tempCenter);
+    //std::cout << "[" << tempCenter[0] << ", " << tempCenter[1] << ", " << tempCenter[2] <<"]"  <<std::endl;
+//};
+
 	// grid->GetPointData()->SetScalars( data ); // BoundaryConditions
 	// grid->GetCellData()->SetScalars( tissues ); // Tissues
 
     /// Cleaning the mesh!
     std::cout << std::endl;
-    std::cout << "Initial number of points: "<< grid->GetNumberOfPoints() << std::endl;
-    std::cout << "Initial number of cells: "<< grid->GetNumberOfCells() << std::endl;
+    std::cout << "Initial number of points: "<< vtk_umesh->GetNumberOfPoints() << std::endl;
+    std::cout << "Initial number of cells: "<< vtk_umesh->GetNumberOfCells() << std::endl;
 
     vtkSmartPointer< vtkStaticCleanUnstructuredGrid > cleaningMesh = vtkSmartPointer< vtkStaticCleanUnstructuredGrid>::New();
-        cleaningMesh->SetInputData(grid);
+        cleaningMesh->SetInputData(vtk_umesh);
         cleaningMesh->ToleranceIsAbsoluteOn();
         cleaningMesh->SetTolerance(0.0);
         cleaningMesh->RemoveUnusedPointsOn();
@@ -488,6 +509,7 @@ void vtkMeshWithBC(C3t3 c3t3, vtkSmartPointer<vtkUnstructuredGrid>& vtk_umesh)
     std::cout << "Final number of points: "<< cleaningMesh->GetOutput()->GetNumberOfPoints() << std::endl;
     std::cout << "Final number of cells: "<< cleaningMesh->GetOutput()->GetNumberOfCells() << std::endl;
 
+    vtk_umesh = cleaningMesh->GetOutput();
 }
 
 void writeVTKmesh( std::string outputfilename, C3t3 c3t3)
@@ -525,9 +547,9 @@ void writeVTKmesh( std::string outputfilename, C3t3 c3t3)
             auxPoint[2] = it->point()[2];
 
             // temporal nodes vector
-            i_points.push_back(auxPoint[0])
-            i_points.push_back(auxPoint[1])
-            i_points.push_back(auxPoint[2])
+            i_points.push_back(auxPoint[0]);
+            i_points.push_back(auxPoint[1]);
+            i_points.push_back(auxPoint[2]);
             //
 
             points->SetPoint(i-1, auxPoint);
@@ -570,10 +592,10 @@ void writeVTKmesh( std::string outputfilename, C3t3 c3t3)
 		tuple[3] = V[v3->point()];
 
 		// temporal element vector
-		elements.push_back( tuple[0] )
-		elements.push_back( tuple[1] )
-		elements.push_back( tuple[2] )
-		elements.push_back( tuple[3] )
+		elements.push_back( tuple[0] );
+		elements.push_back( tuple[1] );
+		elements.push_back( tuple[2] );
+		elements.push_back( tuple[3] );
 		///
 
         cells->InsertNextCell(4,tuple);
@@ -655,8 +677,29 @@ void writeMesh(std::string outputfilename, C3t3 c3t3)
     }
 }
 
+void labelingElements(vtkSmartPointer<vtkUnstructuredGrid>& u_grid, ImageType::Pointer image)
+{
+    /* Labeling elements */
+    //double tempCenter[3] = {0.0,0.0,0.0};
+
+    vtkSmartPointer<vtkCellCenters> centers = vtkSmartPointer<vtkCellCenters>::New();
+        centers->SetInputData(u_grid);
+        centers->Update();
+
+     vtkPointSet* pointSet = centers->GetOutput();
+     std::cout << pointSet->GetNumberOfPoints() << std::endl;
+
+    double * pt; //[3] ={0.0,0.0,0.0};
+     for( int i=0; i<pointSet->GetNumberOfPoints(); i++){
+        pt = pointSet->GetPoint(i);
+
+        std::cout << "[" << pt[0] << ", "<< pt[1] << ", "<< pt[2] << "] " << std::endl;
+     }
+}
+
 int main(int argc, char* argv[])
 {
+    // arguments!
     argum argumentos;
 
     if(argc==1 || strcmp(argv[1],"--h")==0 || strcmp(argv[1],"--help")==0 ) {
@@ -700,7 +743,7 @@ int main(int argc, char* argv[])
 
     if(strcmp(subname.c_str(),".nrrd")!=0 || strcmp(subname.c_str(),".mhd")!=0 ){
         int e = updatePhysicalInformation(img, argumentos.pixel_spacing, inputfilename);
-        if(e!0) return EXIT_FAILURE;
+        if(e!=0) return EXIT_FAILURE;
     };
 
     // Thresholding
@@ -709,9 +752,10 @@ int main(int argc, char* argv[])
         threshold->SetOutsideValue(0);
         threshold->SetInsideValue(1);
         threshold->SetLowerThreshold(1);
-        threshold->SetUpperThreshold(5);
+        threshold->SetUpperThreshold(255);
         threshold->Update();
-
+   ImageType::SizeType ss = threshold->GetOutput()->GetLargestPossibleRegion().GetSize();
+   std::cout << "Size: [" << ss[0] <<", "<< ss[1] <<", "<< ss[2] <<"]"<< std::endl;
 
     std::cout << "itk to vtk" << std::endl;
     // Itk to Vtk
@@ -724,6 +768,8 @@ int main(int argc, char* argv[])
             std::cout << excp << std::endl;
             return EXIT_FAILURE;
         }
+     std::cout << "vtk output tuples:" << itkToVtk->GetOutput()->GetPointData()->GetScalars()->GetNumberOfTuples() << std::endl;
+     std::cout << "itk voxles: [" << ss[0] * ss[1] * ss[2] <<"]"<< std::endl;
 
 
     std::cout << "vtk to cgal" << std::endl;
@@ -748,15 +794,6 @@ int main(int argc, char* argv[])
     );
 
     // Mesh Criteria
-    /*
-    Mesh_criteria criteria(
-        facet_angle=30,
-        facet_size = 5,
-        facet_distance = 1,
-        cell_radius_edge_ratio = 30,
-        cell_size = 5
-    );
-    */
     Mesh_criteria criteria(
         facet_angle = argumentos.facet_angle,
         facet_size = argumentos.facet_size,
@@ -780,8 +817,16 @@ int main(int argc, char* argv[])
     vtkSmartPointer<vtkUnstructuredGrid> vtk_umesh = vtkSmartPointer<vtkUnstructuredGrid>::New();
     vtkMeshWithBC(c3t3, vtk_umesh);
 
+    // Labeling elements
+    labelingElements(vtk_umesh,img);
+
+    /// Writing the mesh
+	vtkSmartPointer<vtkUnstructuredGridWriter> writer = vtkSmartPointer<vtkUnstructuredGridWriter>::New();
+		//writer->SetInputData( cleaningMesh->GetOutput() );
+		writer->SetInputData( vtk_umesh );
+		writer->SetFileName( outputfilename.c_str() );
+		writer->Update();
+		writer->Write();
+
     return EXIT_SUCCESS;
 }
-
-
-
