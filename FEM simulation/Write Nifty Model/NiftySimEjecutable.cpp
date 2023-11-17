@@ -112,7 +112,7 @@ void NiftySimEjecutable::CompressionFunction(modelParameters myParameters, std::
 			for(unsigned int j=0; j<myParameters.elementTissue.size(); j++){
 				if( myParameters.elementTissue[j]== i+1 ) temp_vect.push_back( j );
 			}
-			if(i<2){
+			if(i<5){
 			temp_mat.push_back( myParameters.material_parameters[ 2*i ] );
 			temp_mat.push_back( myParameters.material_parameters[ 2*i+1 ] );
 			} else{ 

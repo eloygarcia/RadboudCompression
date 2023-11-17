@@ -6,105 +6,28 @@
 
 #include <unistd.h>
 
-#include "itkImage.h"
-#include "itkImageFileReader.h"
-
 #include "vtkIdList.h"
 #include "vtkCellArray.h"
 #include "vtkPointData.h"
 #include "vtkPoints.h"
+#include "vtkCellData.h"
 
 #include "vtkSmartPointer.h"
 #include "vtkUnstructuredGrid.h"
 #include "vtkUnstructuredGridReader.h"
 
-typedef itk::Image<unsigned char,3> ImageType;
-typedef itk::ImageFileReader< ImageType > ReaderType;
-typedef itk::Point< double, ImageType::ImageDimension > PointType;
 
-
-void LabelElements(ImageType::Pointer image, std::vector<double> initial_points, std::vector<int> elements, std::vector<int> & tissues)
-{
-	double vertex_1[3] = {0.0,0.0,0.0};
-	double vertex_2[3] = {0.0,0.0,0.0};
-	double vertex_3[3] = {0.0,0.0,0.0};
-	double vertex_4[3] = {0.0,0.0,0.0};
-
-	// double barycenter[3] = {0.0,0.0,0.0};
-
-	ImageType::IndexType pixelIndex;
-	PointType barycenter;
-	bool isInside = true;
-
-	ImageType::PixelType pixelValue;
-	int count_good =0;
-	int count_bad = 0;
-
-	for(int i=0; i<(elements.size()/4); i++)
-	{
-		vertex_1[0] = initial_points[ 3*elements[4*i] ];
-		vertex_1[1] = initial_points[ 3*elements[4*i]+1 ];
-		vertex_1[2] = initial_points[ 3*elements[4*i]+2 ];
-
-		vertex_2[0] = initial_points[ 3*elements[4*i+1] ];
-		vertex_2[1] = initial_points[ 3*elements[4*i+1]+1 ];
-		vertex_2[2] = initial_points[ 3*elements[4*i+1]+2 ];
-
-		vertex_3[0] = initial_points[ 3*elements[4*i+2] ];
-		vertex_3[1] = initial_points[ 3*elements[4*i+2]+1 ];
-		vertex_3[2] = initial_points[ 3*elements[4*i+2]+2 ];
-
-		vertex_4[0] = initial_points[ 3*elements[4*i+3] ];
-		vertex_4[1] = initial_points[ 3*elements[4*i+3]+1 ];
-		vertex_4[2] = initial_points[ 3*elements[4*i+3]+2 ];
-	
-		barycenter[0] = (vertex_1[0] + vertex_2[0] + vertex_3[0] + vertex_4[0]) /4;
-		barycenter[1] = (vertex_1[1] + vertex_2[1] + vertex_3[1] + vertex_4[1]) /4;
-		barycenter[2] = (vertex_1[2] + vertex_2[2] + vertex_3[2] + vertex_4[2]) /4;
-
-		isInside = image->TransformPhysicalPointToIndex( barycenter, pixelIndex );
-
-		if ( isInside )
-		{
-			pixelValue = image->GetPixel( pixelIndex);
-			if(pixelValue == 0)	tissues[i] = 3;
-			else if(pixelValue >3 ) tissues[i] = 2;
-			else tissues[i] = (int) pixelValue;
-
-			count_good +=1;
-			
-		} else {
-			count_bad +=1;
-		}
-	}
-	std::cout << "Good : " << count_good <<  std::endl;
-	std::cout << "Bad : " << count_bad << std::endl;
-}
 
 int main( int argc, char* argv[])
 {
-    if(argc<4){
-        std::cout << "usage: " << argv[0] << " mesh_filename image_filename ouput_filename thickness" << std::endl;
+    if(argc<3){
+        std::cout << "usage: " << argv[0] << " mesh_filename ouput_filename thickness (in mm.)" << std::endl;
         return EXIT_FAILURE;
     }
 
     std::string mesh = argv[1];
-	std::string image = argv[2];
-    std::string output = argv[3];
-	float thick = atof(argv[4]);
-
-	// Itk
-	ReaderType::Pointer reader = ReaderType::New();
-		reader->SetFileName( image );
-		try{
-			reader->Update();
-		}catch(itk::ExceptionObject & excp ){
-			std::cout << "Reader Exception Object!" << std::endl;
-			std::cout << excp << std::endl;
-			return EXIT_FAILURE;
-		}
-
-    std::cout << "imagen leida!"<< std::endl;
+    std::string output = argv[2];
+	float thick = atof(argv[3]);
 
 	// Vtk
     vtkSmartPointer< vtkUnstructuredGridReader> meshReader = vtkSmartPointer< vtkUnstructuredGridReader>::New();
@@ -114,11 +37,16 @@ int main( int argc, char* argv[])
     std::cout << "malla leida!" << std::endl;
 
     // =============================== EXTRACCION DE LA MALLA ===========================
-	// Points
+
+	// Extracting Points
 	std::vector<double> initial_points; // = input_mri->getPoints_model();
 	vtkPoints * i_points = meshReader->GetOutput()->GetPoints();
 	int NoP = meshReader->GetOutput()->GetNumberOfPoints();
 	double temp_point[3] = {0.0,0.0,0.0};
+	/* TO DO */
+	/* Tal vez podamos cambiar estas líneas para poder hacer de un modo mśa elegante la transformación
+	/*   vtkPoints a std::vector
+	/* */
 	for (int i=0; i<NoP; i++)
 	{
 		i_points->GetPoint(i,temp_point);
@@ -130,7 +58,7 @@ int main( int argc, char* argv[])
 
 	std::cout << "Number of points: " << NoP << std::endl;
 
-	// Elements
+	// Extracting Elements
 	int accumm = 0;
 	int minimum = 999999999;
 	std::vector<int> elements; // = input_mri->getElements_model();
@@ -149,19 +77,27 @@ int main( int argc, char* argv[])
 	}
     
     std::cout << "Number of Cells" << i_cells->GetNumberOfCells()  << std::endl;
-    // Tissue!
-	//vtkDataArray* tisue = u_grid_reader->GetOutput()->GetCellData()->GetArray(0);
+
+    // Extracting tissue Tissue!
+	vtkDataArray* materialtissues = meshReader->GetOutput()->GetCellData()->GetArray(0); // creo que es exta línea.
 	std::vector<int> tissues; // = input_mri->getTissueElements_model();
+
+	std::cout << "CHECK THIS BEFORE CONTINUING" << std::endl;
+	std::cout << "Number of cells: " << i_cells->GetNumberOfCells() << std::endl;
+	std::cout << "Name of cell data: " << materialtissues->GetName() << std::endl;
+	std::cout << "Number of cell data tuples: " << materialtissues->GetNumberOfTuples() << std::endl;
+
 	for(int i=0; i<i_cells->GetNumberOfCells(); i++)
 	{
-		tissues.push_back( 1 );
+		tissues.push_back( materialtissues->GetTuple1(i) );
 	}
-	LabelElements(reader->GetOutput(), initial_points, elements, tissues);
-	
-	auto biggest = std::max_element(std::begin( tissues ), std::end( tissues ));
+	//LabelElements(reader->GetOutput(), initial_points, elements, tissues);
+		auto biggest = std::max_element(std::begin( tissues ), std::end( tissues ));
 	std::cout << "El valor biggest es de : " << *biggest << std::endl;
 
-	// BoundaryConditions!
+
+
+	// Extracting nodes BoundaryConditions!
 	vtkDataArray* BoundCond = meshReader->GetOutput()->GetPointData()->GetArray(0);
 	double tuple = 0;
 	std::vector<int> boundaryConditions; // = input_mri->getBoundaryConditions_model();
@@ -218,19 +154,30 @@ int main( int argc, char* argv[])
 	float E_fat = 4.46*1000 ;
 	float E_gland = 15.1*1000 ;
 
+        // 1. Fatty Tissue
 		double a0 = shearModulus( E_fat, nuPoisson);
 			myParameters.material_parameters[0] = a0;
 		double a1 = bulkModulus( E_fat, nuPoisson);
 			myParameters.material_parameters[1] = a1;
+
+		// 2. Glandular Tissue
 		double a2 = shearModulus( E_gland, nuPoisson);
 			myParameters.material_parameters[2] = a2;
 		double a3 = bulkModulus( E_gland, nuPoisson );
 			myParameters.material_parameters[3] = a3;
 
+        // 3. Skin Tissue
 		double a4 = shearModulus( 4*E_gland, nuPoisson);
 			myParameters.material_parameters[4] = a4;
 		double a5 = bulkModulus( 4*E_gland, nuPoisson);
 			myParameters.material_parameters[5] = a5;
+
+        // 4. Pectoral Muscle tissue
+		double a6 = shearModulus( 8*E_gland, nuPoisson);
+			myParameters.material_parameters[6] = a6;
+		double a7 = bulkModulus( 8*E_gland, nuPoisson);
+			myParameters.material_parameters[7] = a7;
+
 
 	std::cout << std::endl;
 	std::cout << "Tejido Glandular: " << std::endl;
@@ -242,14 +189,12 @@ int main( int argc, char* argv[])
 	std::cout << "\t shear modulus: s="<< a0 <<", bulk modulus: m=" << a1 << std::endl;
 	std::cout << std::endl;
 
-		// Los parametros se han de actualizar al hacer cada nueva transformaci'on!!!
-
 	NiftySimEjecutable * nifty = new NiftySimEjecutable();
 		nifty->SetModelParameters( myParameters	);
 		nifty->SetOutputDir( output );
 	int sys_i =	nifty->Update();
 	if(sys_i==1) return EXIT_FAILURE;
 
-
+    std::cout << "Exit success" << std::endl;
     return EXIT_SUCCESS;
 }

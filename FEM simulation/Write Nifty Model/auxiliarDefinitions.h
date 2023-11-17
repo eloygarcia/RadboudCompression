@@ -30,7 +30,10 @@ struct modelParameters
 
 		material_parameters.push_back( 5050.167 );
 		material_parameters.push_back( 499966.555 ); // Glandular
-		
+
+		material_parameters.push_back( 5050.167 );
+		material_parameters.push_back( 499966.555 ); // Glandular
+
 		// SystemParams;
 		// timeStep = "0.0001";
 		 timeStep = "0.00005";
