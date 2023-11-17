@@ -17,17 +17,17 @@ apt-get install -y libx11-dev libxt-dev xserver-xorg-dev xorg-dev ;
 # Install OpenGL
 # Debian, Ubuntu
 # https://en.wikibooks.org/wiki/OpenGL_Programming/Installation/Linux
-RUN apt-get update && apt-get install --yes build-essential libgl1-mesa-dev apt-get libssl-dev
+RUN apt-get update && apt-get install --yes build-essential libgl1-mesa-dev libssl-dev
 
 
     # cmake
  RUN wget http://www.cmake.org/files/v3.16/cmake-3.16.6.tar.gz \
-    && tar xzf cmake-3.16.0.tar.gz
+    && tar xzf cmake-3.16.6.tar.gz
 # old version 2.8.12.2
 # RUN wget http://www.cmake.org/files/v2.8/cmake-2.8.12.2.tar.gz \
 #    && tar xzf cmake-2.8.12.2.tar.gz
 
-RUN cd cmake-3.12.0 \
+RUN cd cmake-3.16.6 \
     && ./configure --prefix=/usr/local \
     && make \
     && make install
