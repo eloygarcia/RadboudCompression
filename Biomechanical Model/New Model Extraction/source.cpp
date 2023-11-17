@@ -15,8 +15,6 @@ typedef itk::ImageFileWriter< ImageType > WriterType;
 #include "itkPoint.h"
 typedef itk::Point<double, ImageType::ImageDimension> PointType;
 
-#include "itkEquivalenceTable.h"
-
 // Itk-Vtk Glue
 #include "itkImageToVTKImageFilter.h"
 typedef itk::ImageToVTKImageFilter<ImageType> ItktoVtkType;
@@ -500,9 +498,9 @@ void vtkMeshWithBC(C3t3 c3t3, vtkSmartPointer<vtkUnstructuredGrid>& vtk_umesh)
 	// grid->GetCellData()->SetScalars( tissues ); // Tissues
 
     /// Cleaning the mesh!
-    std::cout << std::endl;
-    std::cout << "Initial number of points: "<< vtk_umesh->GetNumberOfPoints() << std::endl;
-    std::cout << "Initial number of cells: "<< vtk_umesh->GetNumberOfCells() << std::endl;
+    //std::cout << std::endl;
+    //std::cout << "Initial number of points: "<< vtk_umesh->GetNumberOfPoints() << std::endl;
+   // std::cout << "Initial number of cells: "<< vtk_umesh->GetNumberOfCells() << std::endl;
 
     vtkSmartPointer< vtkStaticCleanUnstructuredGrid > cleaningMesh = vtkSmartPointer< vtkStaticCleanUnstructuredGrid>::New();
         cleaningMesh->SetInputData(vtk_umesh);
@@ -642,9 +640,9 @@ void writeVTKmesh( std::string outputfilename, C3t3 c3t3)
 	// grid->GetCellData()->SetScalars( tissues ); // Tissues
 
     /// Cleaning the mesh!
-    std::cout << std::endl;
-    std::cout << "Initial number of points: "<< grid->GetNumberOfPoints() << std::endl;
-    std::cout << "Initial number of cells: "<< grid->GetNumberOfCells() << std::endl;
+    //std::cout << std::endl;
+    //std::cout << "Initial number of points: "<< grid->GetNumberOfPoints() << std::endl;
+    //std::cout << "Initial number of cells: "<< grid->GetNumberOfCells() << std::endl;
 
     vtkSmartPointer< vtkStaticCleanUnstructuredGrid > cleaningMesh = vtkSmartPointer< vtkStaticCleanUnstructuredGrid>::New();
         cleaningMesh->SetInputData(grid);
@@ -693,7 +691,7 @@ void labelingElements(vtkSmartPointer<vtkUnstructuredGrid>& u_grid, ImageType::P
         centers->Update();
 
      vtkPointSet* pointSet = centers->GetOutput();
-     std::cout << pointSet->GetNumberOfPoints() << std::endl;
+     //std::cout << pointSet->GetNumberOfPoints() << std::endl;
      ImageType::IndexType idx;
 
     double * pt; //[3] ={0.0,0.0,0.0};
@@ -719,6 +717,7 @@ void labelingElements(vtkSmartPointer<vtkUnstructuredGrid>& u_grid, ImageType::P
             itkpt[2] = pt[2];
         image->TransformPhysicalPointToIndex( itkpt, idx);
             pixelValue = image->GetPixel(idx);
+            if(pixelValue==0) pixelValue=3;
         data->InsertNextValue( pixelValue );
 
         ImageType::SizeType ss = image->GetLargestPossibleRegion().GetSize();
@@ -727,13 +726,32 @@ void labelingElements(vtkSmartPointer<vtkUnstructuredGrid>& u_grid, ImageType::P
         //std::cout << "[" << idx[0] << ", "<< idx[1] << ", "<< idx[2] << "] " << std::endl;
         //std::cout << "Pixel Value: " << pixelValue << std::endl;
 
-     }
+     };
 
      u_grid->GetCellData()->SetScalars( data ); // Tissues
 
-     //vtkSmartPointer<vtkCellDataToPointData> cell2point = vtkSmartPointer<vtkCellDataToPointData>:New();
-    //    cell2point->SetInputData(u_grid);
+      // Boundary conditions:
+      // This is performed using point data.
+      //
+     vtkSmartPointer<vtkCellDataToPointData> cell2point = vtkSmartPointer<vtkCellDataToPointData>::New();
+        cell2point->SetInputData(u_grid);
+        cell2point->Update();
 
+    // initialize point data array
+    vtkIntArray * bcdata = vtkIntArray::New();
+	bcdata->SetName("boundaryConditions");
+
+    // std::cout << cell2point->GetOutput()->GetCellData()->GetNumberOfArrays() << std::endl;
+    // std::cout << cell2point->GetOutput()->GetPointData()->GetNumberOfArrays() << std::endl;
+    // std::cout << cell2point->GetOutput()->GetPointData()->GetArray(0)->GetNumberOfTuples() << std::endl;
+    // std::cout << cell2point->GetOutput()->GetPointData()->GetArray(0)->GetName() << std::endl;
+    for( int i=0; i<cell2point->GetOutput()->GetPointData()->GetArray(0)->GetNumberOfTuples(); i++){
+        if( cell2point->GetOutput()->GetPointData()->GetArray(0)->GetTuple1(i) > 3) bcdata->InsertNextValue(1);
+        else bcdata->InsertNextValue(0);
+        //std::cout << cell2point->GetOutput()->GetPointData()->GetArray(0)->GetTuple1(i) << std::endl;
+    }
+
+    u_grid->GetPointData()->SetScalars( bcdata );
 }
 
 int main(int argc, char* argv[])
@@ -778,7 +796,7 @@ int main(int argc, char* argv[])
 
     // Physical information
     std::string subname = inputfilename.substr( inputfilename.length()-5, inputfilename.length());
-    std::cout << subname.c_str() << std::endl;
+    //std::cout << subname.c_str() << std::endl;
 
     if(strcmp(subname.c_str(),".nrrd")!=0 || strcmp(subname.c_str(),".mhd")!=0 ){
         int e = updatePhysicalInformation(img, argumentos.pixel_spacing, inputfilename);
@@ -807,8 +825,8 @@ int main(int argc, char* argv[])
             std::cout << excp << std::endl;
             return EXIT_FAILURE;
         }
-     std::cout << "vtk output tuples:" << itkToVtk->GetOutput()->GetPointData()->GetScalars()->GetNumberOfTuples() << std::endl;
-     std::cout << "itk voxles: [" << ss[0] * ss[1] * ss[2] <<"]"<< std::endl;
+     //std::cout << "vtk output tuples:" << itkToVtk->GetOutput()->GetPointData()->GetScalars()->GetNumberOfTuples() << std::endl;
+     //std::cout << "itk voxles: [" << ss[0] * ss[1] * ss[2] <<"]"<< std::endl;
 
 
     std::cout << "vtk to cgal" << std::endl;
@@ -847,8 +865,8 @@ int main(int argc, char* argv[])
     // Mesh Extraction??
     std::cout << std::endl;
     Tr tr = c3t3.triangulation();
-    std::cout << "number of points " << tr.number_of_vertices() << std::endl;
-    std::cout << "number of elements " << c3t3.number_of_cells() << std::endl;
+    std::cout << "Initial number of points " << tr.number_of_vertices() << std::endl;
+    std::cout << "Initial number of elements " << c3t3.number_of_cells() << std::endl;
     std::cout << std::endl;
 
     // Write mesh
