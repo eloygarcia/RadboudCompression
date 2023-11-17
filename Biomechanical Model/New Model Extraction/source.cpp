@@ -7,11 +7,15 @@
 #include "itkBinaryThresholdImageFilter.h"
 #include "itkImageFileWriter.h"
 
-typedef itk::Image<unsigned char,3> ImageType;
+typedef itk::Image<unsigned short,3> ImageType;
 typedef itk::ImageFileReader<ImageType> ReaderType;
 typedef itk::BinaryThresholdImageFilter<ImageType, ImageType> ThresholdType;
 typedef itk::ImageFileWriter< ImageType > WriterType;
 
+#include "itkPoint.h"
+typedef itk::Point<double, ImageType::ImageDimension> PointType;
+
+#include "itkEquivalenceTable.h"
 
 // Itk-Vtk Glue
 #include "itkImageToVTKImageFilter.h"
@@ -28,12 +32,14 @@ typedef itk::ImageToVTKImageFilter<ImageType> ItktoVtkType;
 #include "vtkIdList.h"
 #include "vtkCellArray.h"
 #include "vtkIdTypeArray.h"
+#include "vtkCellData.h"
 
 #include "vtkTetra.h"
 
 #include "vtkStaticCleanUnstructuredGrid.h"
 
 #include "vtkCellCenters.h"
+#include "vtkCellDataToPointData.h"
 
 // CGAL
 #include <CGAL/Exact_predicates_inexact_constructions_kernel.h>
@@ -162,7 +168,7 @@ int updatePhysicalInformation(ImageType::Pointer & image, std::vector<float> pix
     std::cout << "Writing " << inputfilename.substr(0, inputfilename.length()-5) << "-a.nrrd image" << std::endl;
 
     WriterType::Pointer writer = WriterType::New();
-        writer->SetFileName( inputfilename.substr(0, inputfilename.length()-5) +".nrrd" );
+        writer->SetFileName( inputfilename.substr(0, inputfilename.length()-5) +"-a.nrrd" );
         writer->SetInput( image );
         writer->UseCompressionOn();
         try{
@@ -688,13 +694,46 @@ void labelingElements(vtkSmartPointer<vtkUnstructuredGrid>& u_grid, ImageType::P
 
      vtkPointSet* pointSet = centers->GetOutput();
      std::cout << pointSet->GetNumberOfPoints() << std::endl;
+     ImageType::IndexType idx;
 
     double * pt; //[3] ={0.0,0.0,0.0};
+    PointType itkpt;
+    ImageType::PixelType pixelValue;
+
+    vtkIntArray * data = vtkIntArray::New();
+	data->SetName("materials");
+
+/*
+// https://discourse.vtk.org/t/get-centroids-in-python-script/5073/4
+    cell_Iterator = data.NewCellIterator()
+    while cell_Iterator:
+        cellID = cell_Iterator.GetCellId()
+        cellData = data.GetCell(cellID)
+        centroid = cellData.GetCentroid()
+        cell_Iterator.GoToNextCell()
+  */
      for( int i=0; i<pointSet->GetNumberOfPoints(); i++){
         pt = pointSet->GetPoint(i);
+            itkpt[0] = pt[0];
+            itkpt[1] = pt[1];
+            itkpt[2] = pt[2];
+        image->TransformPhysicalPointToIndex( itkpt, idx);
+            pixelValue = image->GetPixel(idx);
+        data->InsertNextValue( pixelValue );
 
-        std::cout << "[" << pt[0] << ", "<< pt[1] << ", "<< pt[2] << "] " << std::endl;
+        ImageType::SizeType ss = image->GetLargestPossibleRegion().GetSize();
+
+        //std::cout << "Size: [" << ss[0] <<", "<< ss[1] <<", "<< ss[2] <<"]"<< std::endl;
+        //std::cout << "[" << idx[0] << ", "<< idx[1] << ", "<< idx[2] << "] " << std::endl;
+        //std::cout << "Pixel Value: " << pixelValue << std::endl;
+
      }
+
+     u_grid->GetCellData()->SetScalars( data ); // Tissues
+
+     //vtkSmartPointer<vtkCellDataToPointData> cell2point = vtkSmartPointer<vtkCellDataToPointData>:New();
+    //    cell2point->SetInputData(u_grid);
+
 }
 
 int main(int argc, char* argv[])

@@ -2,7 +2,7 @@
 FROM ubuntu:20.04
 LABEL authors="eloygarcia"
 
-ENTRYPOINT ["top", "-b"]
+#ENTRYPOINT ["top", "-b"]
 
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
@@ -17,12 +17,12 @@ apt-get install -y libx11-dev libxt-dev xserver-xorg-dev xorg-dev ;
 # Install OpenGL
 # Debian, Ubuntu
 # https://en.wikibooks.org/wiki/OpenGL_Programming/Installation/Linux
-RUN apt-get update && apt-get install --yes build-essential libgl1-mesa-dev
+RUN apt-get update && apt-get install --yes build-essential libgl1-mesa-dev apt-get libssl-dev
 
 
     # cmake
- RUN wget http://www.cmake.org/files/v3.12/cmake-3.12.0.tar.gz \
-    && tar xzf cmake-3.12.0.tar.gz
+ RUN wget http://www.cmake.org/files/v3.16/cmake-3.16.6.tar.gz \
+    && tar xzf cmake-3.16.0.tar.gz
 # old version 2.8.12.2
 # RUN wget http://www.cmake.org/files/v2.8/cmake-2.8.12.2.tar.gz \
 #    && tar xzf cmake-2.8.12.2.tar.gz
@@ -49,6 +49,9 @@ RUN cd tk8.6.6/unix && ./configure && make && make install
 
 # vtk
 # Download & extract VTK
+
+# check : https://discourse.vtk.org/t/installing-vtk-in-ubuntu-18-04/2147/3
+
 #RUN mkdir -p
 RUN wget http://www.vtk.org/files/release/8.2/VTK-8.2.0.tar.gz && tar -zxvf VTK-8.2.0.tar.gz
 #  old version 7.1.1
