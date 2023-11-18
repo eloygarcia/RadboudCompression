@@ -817,8 +817,8 @@ void NewProjection::getCompressedImage(std::vector<float> initial_points, std::v
 	long  im_numberOfPixels = (long)im_size[0] * (long)im_size[1] * (long)im_size[2];
 
 std::cout << "Comienza final_image"<< std::endl;
-std::cout << im_size[0] <<", " << im_size[1] << ", " << im_size[2] << std::endl;
-std::cout << im_size[0] * im_size[1] * im_size[2] << std::endl;
+std::cout << "[" << im_size[0] <<", " << im_size[1] << ", " << im_size[2] << "]" << std::endl;
+std::cout << (long)im_size[0] * (long)im_size[1] * (long)im_size[2] << std::endl;
 std::cout << im_numberOfPixels << std::endl;
 std::cout << std::endl;
 	final_image = new unsigned char[ im_numberOfPixels ]; // Cambiar cuando rehagas la imagen !!!  NO int SINO float !!

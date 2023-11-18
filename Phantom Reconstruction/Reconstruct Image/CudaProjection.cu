@@ -317,16 +317,19 @@ void CudaProjection::Update()
 		printf("\n"); 
 // Kernel de proyecci\F3n?
 		printf("Entra en el kernel\n" );
-		 // fill_dos <<< bl,512 >>> (dev_simulada_imagepointer);
+
 		
 	//cudaStatus = cudaSetDevice(0);
+	
 	kernel_projection <<< bl,512 >>> (dev_initial_size, dev_initial_spacing, dev_initial_origen, dev_initial_imagepointer,
 										dev_i_points, dev_f_points, dev_elements,
 										dev_grid_origen, dev_grid_spacing, dev_grid_size,
 										dev_flags, dev_cumsum, dev_correspondingElements,
 									  dev_simulada_size, dev_simulada_spacing, dev_simulada_origen, dev_simulada_imagepointer);
 									  //dev_source);								   
-					   
+
+     // fill_dos <<< bl,512 >>> (dev_simulada_imagepointer);
+
 	cudaDeviceSynchronize();
 
 	cudaError_t error = cudaGetLastError();
@@ -449,7 +452,7 @@ void CudaProjection::Update()
 	//cudaFree( numberOfPixels_initial);		cudaFree( numberOfPixels_simulada);
 
 //	cudaFree( (void*) dev_source);				//cudaFree( temp_source);
-	cudaDeviceReset();
+//	cudaDeviceReset();
 
 	// cudaFree( kernel_projection );
 
@@ -463,4 +466,5 @@ void CudaProjection::Update()
 	printf("Sale de cuda\n");
 	printf("\n");
 	*/
+	printf("Sale de cuda - 17/11\n" );
 }

@@ -335,8 +335,8 @@ __global__ void kernel_projection(const int* dev_3d_size, const float* dev_3d_sp
 					// Sleep(250);
 
 					index = (long int)((long int)floorf(pixel[0]) + ((long int)dev_3d_size[0] * (long int)floorf(pixel[1]) ) + ((long int)dev_3d_size[0]*(long int)dev_3d_size[1]*(long int)floorf(pixel[2])));
-					//dev_2d_imagepointer[i] = (unsigned char)index;
-					if(index>0) dev_2d_imagepointer[i]=dev_3d_imagepointer[index];
+					dev_2d_imagepointer[i] = (unsigned char)index;
+					// if(index>0) dev_2d_imagepointer[i]=dev_3d_imagepointer[index];
 
   					
 					// dev_2d_imagepointer[i] = (unsigned char)dev_3d_imagepointer[index];
@@ -366,13 +366,13 @@ __global__ void kernel_projection(const int* dev_3d_size, const float* dev_3d_sp
 		} // endfor
 		} // endif( number_of_elements_here!=0 )		
 
-		// dev_2d_imagepointer[i] = (char)number_of_elements_here;
+		//dev_2d_imagepointer[i] = (char)number_of_elements_here;
 		//dev_2d_imagepointer[i] = 1.0f;
 }
 
 
-__global__ void fill_dos( char * imagepointer)
+__global__ void fill_dos(unsigned char * imagepointer)
 {
 	long unsigned int i = blockDim.x * blockIdx.x +threadIdx.x;
-	imagepointer[i]=2;
+	imagepointer[i]=255;
 }
