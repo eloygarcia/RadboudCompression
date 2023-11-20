@@ -13,7 +13,14 @@ typedef itk::ImageFileWriter< ImageType > WriterType;
 typedef itk::ChangeLabelImageFilter<ImageType, ImageType> ChangingType;
 
 
-int main(int argc, char* argv[]){
+int main(int argc, char* argv[])
+{
+
+    if(argc < 3){
+        std::cout << "Usage: " << std::endl;
+        std::cout << argv[0] << " inputfilename outputfilename" << std::endl;
+        return EXIT_FAILURE;
+    }
 
     std::string inputfilename = argv[1];
     std::string outputfilename = argv[2];
@@ -51,7 +58,7 @@ int main(int argc, char* argv[]){
        {150, 1}, // artery as fatty tissue
        {225, 1}, // vein as fatty tissue
        {200, 5}, // cancerous mass
-       {250, 2}, // calcification as glandular tissue
+       {250, 1}, // calcification as glandular tissue
         {50, 6}, // compression paddel
     };
     ChangingType::ChangeMapType map = mapping;

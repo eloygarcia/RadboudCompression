@@ -24,7 +24,7 @@ void Usage(char* argv[])
 {
 	std::cout<< " " << std::endl;
 	std::cout<< "Change information (from breast.tiff to breast.nrrd + breastMask.nrrd) " << std::endl;
-	std::cout<< argv[0] <<"  ImagePath OutputPath VoxelSizeX VoxelSizeY VoxelSizeZ" << std::endl;
+	std::cout<< argv[0] <<"  ImagePath OutputPath VoxelSizeX VoxelSizeY VoxelSizeZ [--Rewrite outputVoxelX outputVoxelY outputVoxelZ]" << std::endl;
 }
 
 
@@ -32,7 +32,7 @@ int main( int argc, char* argv[])
 {
 	std::cout << std::endl;
 	// ===================== Usage =========================
-	if(argc!=6)  //or argc!=5 ???
+	if(argc<6)  //or argc!=5 ???
 	{
 		Usage(argv);
 		return EXIT_FAILURE;
@@ -105,6 +105,13 @@ int main( int argc, char* argv[])
 		spacingOutput[0] = 0.273;
 		spacingOutput[1] = 0.273;
 		spacingOutput[2] = 0.273;
+
+	if(strcmp( argv[6],"--Rewrite")==0){
+	    spacingOutput[0] = atof(argv[7]);
+		spacingOutput[1] = atof(argv[8]);
+		spacingOutput[2] = atof(argv[9]);
+	}
+
 	ImageType::SizeType sizeOutput;
 		sizeOutput[0] = int( (size[0]*spacing[0]) / spacingOutput[0]);
 		sizeOutput[1] = int( (size[1]*spacing[1]) / spacingOutput[1]);

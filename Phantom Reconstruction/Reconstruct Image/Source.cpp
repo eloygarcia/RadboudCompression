@@ -81,6 +81,15 @@ int main( int argc, char* argv[])
     std::vector<int> elements;
     extractNodesAndElements( originalMeshReader->GetOutput(), initial_points, elements);
 
+    double bounds_original[6];
+    originalMeshReader->GetOutput()->GetBounds(bounds_original);
+
+    std::cout << std::endl;
+    std::cout << "Original uncompressed mesh" << std::endl;
+    std::cout << "Bounding box: [" << bounds_original[0] << ", " << bounds_original[1] << std::endl;
+    std::cout << "\t\t" << bounds_original[2] << ", "<< bounds_original[3] << ", " << std::endl;
+    std::cout << "\t\t" << bounds_original[4] << ", "<< bounds_original[5] << ", " << std::endl;
+
     /* compressed_mesh*/
     vtkSmartPointer< vtkUnstructuredGridReader > compressedMeshReader = vtkSmartPointer< vtkUnstructuredGridReader>::New();
         compressedMeshReader->SetFileName( compressed_mesh.c_str());
@@ -90,6 +99,14 @@ int main( int argc, char* argv[])
     std::vector<int> unused_elements;
     extractNodesAndElements( compressedMeshReader->GetOutput(), final_points, unused_elements);
 
+    double bounds_compressed[6];
+    compressedMeshReader->GetOutput()->GetBounds(bounds_compressed);
+
+    std::cout << std::endl;
+    std::cout << "Compressed mesh" << std::endl;
+    std::cout << "Bounding box: [" << bounds_compressed[0] << ", " << bounds_compressed[1] << std::endl;
+    std::cout << "\t\t" << bounds_compressed[2] << ", "<< bounds_compressed[3] << ", " << std::endl;
+    std::cout << "\t\t" << bounds_compressed[4] << ", "<< bounds_compressed[5] << ", " << std::endl;
 
     /* ITK */
     /* Read original image */
@@ -108,12 +125,14 @@ int main( int argc, char* argv[])
 	ImageType::SizeType size = imageReader->GetOutput()->GetLargestPossibleRegion().GetSize();
 	ImageType::DirectionType direction = imageReader->GetOutput()->GetDirection();
 
+    std::cout << std::endl;
+    std::cout << "Original breast image"<< std::endl;
     std::cout << "Origen : [" << origen[0] << ", " << origen[1] << ", " << origen[2] << "] " << std::endl;
 	std::cout << "Spacing : [" << spacing[0] << ", " << spacing[1] << ", " << spacing[2] << "] " << std::endl;
 	std::cout << "Size : [" << size[0] << ", " << size[1] << ", " << size[2] << "] " << std::endl;
 	std::cout << "Direction : [" << direction[0][0] << ", " << direction[0][1] << ", " << direction[0][2] << "] " << std::endl;
-	std::cout << "\t" << direction[1][0] << ", " << direction[1][1] << ", " << direction[1][2] << "] " << std::endl;
-	std::cout << "\t" << direction[2][0] << ", " << direction[2][1] << ", " << direction[2][2] << "] " << std::endl;
+	std::cout << "\t\t" << direction[1][0] << ", " << direction[1][1] << ", " << direction[1][2] << "] " << std::endl;
+	std::cout << "\t\t" << direction[2][0] << ", " << direction[2][1] << ", " << direction[2][2] << "] " << std::endl;
 
     /* IMAGE RECONSTRUCTION */
     float spa[3] = {0.0,0.0,0.0}; //just preparing the function

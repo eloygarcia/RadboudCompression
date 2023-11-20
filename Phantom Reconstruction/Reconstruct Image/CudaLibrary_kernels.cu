@@ -13,7 +13,6 @@ __device__ void Determinante( float* a0, float* a1, float* a2, float & det )
 		w[2] = a1[0]*a2[1] - a1[1]*a2[0];
 	
 	det = a0[0]*w[0] + a0[1]*w[1] + a0[2]*w[2];
-	//return det;
 }
 
 __device__ void triLinearInterpolator(const float* imagepointer, const int* size, const float* pixel, float & value) // es un pixel continuo, con lo cual, vale
@@ -115,8 +114,6 @@ __device__ void computeBaricentricCoordinates(float* posicionPunto, float* verte
 		baricentricCoordinates[0]+baricentricCoordinates[1]+baricentricCoordinates[2]+baricentricCoordinates[3]<1.01 &&
 		baricentricCoordinates[0]+baricentricCoordinates[1]+baricentricCoordinates[2]+baricentricCoordinates[3]>0.99 )
 		is_inside=true;
-	
-	//return is_inside;
 }
 
 __device__ void computeCartessianCoordinates(float* baricentricCoordinates, float* vertex_0, float* vertex_1, float* vertex_2, float* vertex_3, float* posicionPunto)
@@ -288,6 +285,7 @@ __global__ void kernel_projection(const int* dev_3d_size, const float* dev_3d_sp
 			computeBaricentricCoordinates(temp_position, temp_vertex_0, temp_vertex_1, temp_vertex_2, temp_vertex_3, baricentricCoordinates, is_inside);
 
 			if( is_inside ){
+			//printf("Is inside");
 				// dev_2d_imagepointer[i] = 0; // hasta aquí llega!!!
 				//if(dev_2d_imagepointer[i] == 0 ) 
 				//{
@@ -334,9 +332,18 @@ __global__ void kernel_projection(const int* dev_3d_size, const float* dev_3d_sp
 //					std::cout << std::endl;
 					// Sleep(250);
 
+			//		if((i>0)&(i<(dev_2d_size[0]*dev_2d_size[1]*dev_3d_size[2]))){
+			//		    // dev_2d_imagepointer[i] = (unsigned char)index;
+			//		    dev_2d_imagepointer[i] = i;
+			//		}
+
+                    //if((pixel[0]>0) && (pixel[0]<dev_3d_size[0]) &&
+                     //   (pixel[1]>0) && (pixel[0]<dev_3d_size[1]) &&
+                     //   (pixel[2]>0) && (pixel[0]<dev_3d_size[2])){
 					index = (long int)((long int)floorf(pixel[0]) + ((long int)dev_3d_size[0] * (long int)floorf(pixel[1]) ) + ((long int)dev_3d_size[0]*(long int)dev_3d_size[1]*(long int)floorf(pixel[2])));
-					dev_2d_imagepointer[i] = (unsigned char)index;
-					// if(index>0) dev_2d_imagepointer[i]=dev_3d_imagepointer[index];
+					// dev_2d_imagepointer[i] = (unsigned char)index;
+					if(index>0) dev_2d_imagepointer[i]=dev_3d_imagepointer[index];
+					//}
 
   					
 					// dev_2d_imagepointer[i] = (unsigned char)dev_3d_imagepointer[index];
@@ -362,7 +369,7 @@ __global__ void kernel_projection(const int* dev_3d_size, const float* dev_3d_sp
 				//	Sleep(500);
 
 				// } // endif( final_image[i]==0 )
-			} // endif( is_inside == true )		
+			} // endif( is_inside == true )
 		} // endfor
 		} // endif( number_of_elements_here!=0 )		
 
@@ -374,5 +381,5 @@ __global__ void kernel_projection(const int* dev_3d_size, const float* dev_3d_sp
 __global__ void fill_dos(unsigned char * imagepointer)
 {
 	long unsigned int i = blockDim.x * blockIdx.x +threadIdx.x;
-	imagepointer[i]=255;
+	imagepointer[i]=2;
 }

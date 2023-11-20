@@ -14,11 +14,11 @@ import imageio.v3 as iio
 import numpy as np
 
 ####
-inputfilename = '/home/eloygarcia/Escritorio/UCM/models/hetero_50um.tif'
-outputfilename = '/home/eloygarcia/Escritorio/UCM/models/hetero_50um.nrrd'
+inputfilename = '/home/eloygarcia/Escritorio/UCM/models/hetero/hetero_50um.tif'
+outputfilename = '/home/eloygarcia/Escritorio/UCM/models/hetero/hetero_50um.nrrd'
 
 #### SCATTERED
-# inputfilename = '/home/eloygarcia/Escritorio/UCM/models/scattered_50um.tif'
-# outputfilename = '/home/eloygarcia/Escritorio/UCM/models/scattered_50um.nrrd'
+# inputfilename = '/home/eloygarcia/Escritorio/UCM/models/scattered/scattered_50um.tif'
+# outputfilename = '/home/eloygarcia/Escritorio/UCM/models/scattered/scattered_50um.nrrd'
 
 sitk.WriteImage( sitk.GetImageFromArray(iio.imread(inputfilename)), outputfilename, useCompression=True)

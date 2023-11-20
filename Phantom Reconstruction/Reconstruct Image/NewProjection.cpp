@@ -566,7 +566,7 @@ void NewProjection::getCompressedImage(std::vector<float> initial_points, std::v
 	image_original->SetDirection(direction);
 
 	std::cout << std::endl;
-	std::cout << "Comienza la compression por medio de coordenadas baric�ntricas !" << std::endl;
+	std::cout << "Entra NewProjection::getCompressedImage() !" << std::endl;
 	std::cout << std::endl;
 
 	/* Point ! */
@@ -577,7 +577,7 @@ void NewProjection::getCompressedImage(std::vector<float> initial_points, std::v
 	float * new_arr = new float[ deformed_points.size() ];
 	for(int i=0; i<deformed_points.size(); i++) { new_arr[i] = (float)deformed_points[i]; };
 	
-	std::cout << " Constante n = " << n << std::endl;
+	std::cout << " Constante n (numero de puntos) = " << n << std::endl;
 
 	// Bounding Box
 	/*
@@ -595,7 +595,7 @@ void NewProjection::getCompressedImage(std::vector<float> initial_points, std::v
 	for(int i=0; i<6; i++)		bounding_box[i]=0;
 	get_boundingBox(new_arr,n,bounding_box);
 
-	std::cout << "BoundingBox: ["<< bounding_box[0]<< ", "<< bounding_box[1] << ", "<< bounding_box[2] <<
+	std::cout << "BoundingBox Compressed points: ["<< bounding_box[0]<< ", "<< bounding_box[1] << ", "<< bounding_box[2] <<
 		 ", "<< bounding_box[3] << ", "<< bounding_box[4] << ", "<< bounding_box[5] << std::endl;
 	std::cout<< std::endl;
 	
@@ -604,12 +604,10 @@ void NewProjection::getCompressedImage(std::vector<float> initial_points, std::v
 	int min_cha = 9999;
 	int * cha = new int[ elements.size() ];
 	for(int i=0; i<elements.size(); i++)	{
-			cha[i] = elements[i]; 
-//			if(cha[i]<min_cha) min_cha = cha[i];
+			cha[i] = elements[i];
 	}
-	
-	std::cout << " Constante m = " << m << std::endl;
-//	std::cout << " Mincha = " << min_cha  << std::endl;
+	std::cout << " Constante m (numero de elementos) = " << m << std::endl;
+
 
 	/* Leo la imagen original que compone la malla*/
 	ImageType::PointType origen_input = image_original->GetOrigin();
@@ -632,9 +630,9 @@ void NewProjection::getCompressedImage(std::vector<float> initial_points, std::v
 	std::cout << "Origen : [" << origenCuda[0] << ", " << origenCuda[1] << ", " << origenCuda[2] << "] " << std::endl;
 	std::cout << "Size : [" << sizeCuda[0] << ", " << sizeCuda[1] << ", " << sizeCuda[2] << "] " << std::endl;
 	std::cout << "Spacing : [" << spacingCuda[0] << ", " << spacingCuda[1] << ", " << spacingCuda[2] << "] " << std::endl;
-	std::cout << "Delimitation: \n\t" << origenCuda[0] <<", "<< origenCuda[0]+(sizeCuda[0]*spacingCuda[0]) << std::endl;
-	std::cout << "\t" << origenCuda[1] <<", "<< origenCuda[1]+(sizeCuda[1]*spacingCuda[1]) << std::endl;
-	std::cout << "\t" << origenCuda[2] <<", "<< origenCuda[2]+(sizeCuda[2]*spacingCuda[2]) << std::endl;
+	std::cout << "Delimitation: \n\t\t" << origenCuda[0] <<", "<< origenCuda[0]+(sizeCuda[0]*spacingCuda[0]) << std::endl;
+	std::cout << "\t\t" << origenCuda[1] <<", "<< origenCuda[1]+(sizeCuda[1]*spacingCuda[1]) << std::endl;
+	std::cout << "\t\t" << origenCuda[2] <<", "<< origenCuda[2]+(sizeCuda[2]*spacingCuda[2]) << std::endl;
 	std::cout << "Direction: \n"<< directioCuda << std::endl;
 	std::cout << std::endl;
 	
@@ -701,6 +699,7 @@ void NewProjection::getCompressedImage(std::vector<float> initial_points, std::v
 	}
 
 	std::cout << std::endl;
+	std::cout << "Grid regular de apoyo" << std::endl;
 	std::cout << "NumberOfPixels : " << numberOfPixels << std::endl;
 	std::cout << "Bounding box: [" << bounding_box[0] << ", " <<bounding_box[1] << ", " <<bounding_box[2] << ", " <<bounding_box[3] << ", " <<bounding_box[4] << ", " <<bounding_box[5] << "] " << std::endl;
 	std::cout << "Origen : [" << m_origen[0] << ", " << m_origen[1] << ", " << m_origen[2] << "] " << std::endl;
@@ -816,16 +815,18 @@ void NewProjection::getCompressedImage(std::vector<float> initial_points, std::v
 
 	long  im_numberOfPixels = (long)im_size[0] * (long)im_size[1] * (long)im_size[2];
 
-std::cout << "Comienza final_image"<< std::endl;
+std::cout << "Checking final image size"<< std::endl;
 std::cout << "[" << im_size[0] <<", " << im_size[1] << ", " << im_size[2] << "]" << std::endl;
 std::cout << (long)im_size[0] * (long)im_size[1] * (long)im_size[2] << std::endl;
 std::cout << im_numberOfPixels << std::endl;
 std::cout << std::endl;
+
 	final_image = new unsigned char[ im_numberOfPixels ]; // Cambiar cuando rehagas la imagen !!!  NO int SINO float !!
 	for( long i=0; i<im_numberOfPixels; i++) {
 		final_image[i] = 0;
 	}
-std::cout << "Comienza final_image"<< std::endl;
+
+std::cout << "Entra Cuda projection"<< std::endl;
 	CudaProjection * projection = new CudaProjection();
 		projection->SetInitialImage(sizeCuda, spacingCuda, origenCuda, image_input);
 		projection->SetMesh(n, arr, new_arr, m, cha);
