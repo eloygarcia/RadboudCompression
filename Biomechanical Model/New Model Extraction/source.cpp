@@ -684,6 +684,11 @@ void writeMesh(std::string outputfilename, C3t3 c3t3)
 void labelingElements(vtkSmartPointer<vtkUnstructuredGrid>& u_grid, ImageType::Pointer image)
 {
     /* Labeling elements */
+    // Set material description in the elements:
+    // 0 - background
+    // 1 - Fatty
+    // 2 - Glandular
+    // 3 - skin
     //double tempCenter[3] = {0.0,0.0,0.0};
 
     vtkSmartPointer<vtkCellCenters> centers = vtkSmartPointer<vtkCellCenters>::New();
