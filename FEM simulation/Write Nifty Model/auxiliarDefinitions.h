@@ -55,6 +55,9 @@ struct modelParameters
 
 		// Paddle; 
 		paddleAngle = 0.0;
+
+		// Gravity
+		gravity = 100;
 	}
 
 	std::string name;
@@ -113,6 +116,8 @@ struct modelParameters
 	double pectoralAngle;
 
 	float paddleAngle;
+
+	float gravity;
 }; 
 
 #endif

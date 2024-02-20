@@ -41,6 +41,10 @@ from vtkmodules.vtkFiltersGeometry import (
     vtkDataSetSurfaceFilter 
     )
 
+from vtkmodules.vtkIOLegacy import (
+    vtkPolyDataReader,
+    vtkPolyDataWriter
+    )
 def get_program_parameters():
     description = 'Read a .stl file.'
     epilogue = ''''''
@@ -56,9 +60,12 @@ def close_window(iren):
     iren.TerminateApp()
     del render_window, iren
 
-def computeDistances(obj_filename, vtk_filename): 
+def computeDistances(obj_filename, vtk_filename):
+    print(obj_filename)
+    print(vtk_filename)
+
     #colors = vtkNamedColors()
-    reader = vtkOBJReader()
+    reader = vtkPolyDataReader()
     reader.SetFileName(obj_filename)
     reader.Update()
     # points = reader.GetOutput().GetPoints()
@@ -66,18 +73,19 @@ def computeDistances(obj_filename, vtk_filename):
     reader_mesh = vtkUnstructuredGridReader()
     reader_mesh.SetFileName( vtk_filename)
     reader_mesh.Update()
-    
+
+    print('here0')
     # surface_filter = vtkGeometryFilter()
     surface_filter = vtkDataSetSurfaceFilter()
     surface_filter.SetInputConnection( reader_mesh.GetOutputPort() )
     surface_filter.Update()
     
     bb1 = np.array(surface_filter.GetOutput().GetBounds())
-    
-    tr = vtkTransform()
-    # tr.Translate(bb1[0]-bb0[0], bb1[2]-bb0[1], bb1[1]-bb0[2])
-    tr.RotateX(90)
-    ## Checkear la dirección a ver si está bien!!
+    """
+        tr = vtkTransform()
+        # tr.Translate(bb1[0]-bb0[0], bb1[2]-bb0[1], bb1[1]-bb0[2])
+        tr.RotateX(90)
+        ## Checkear la dirección a ver si está bien!!
     
     tp = vtkTransformFilter()
     tp.SetInputConnection(reader.GetOutputPort())
@@ -86,19 +94,24 @@ def computeDistances(obj_filename, vtk_filename):
     
     #points2 = tp.GetOutput()
     bb0 = np.array(tp.GetOutput().GetBounds())
-    
+    """
+
+    bb0 = np.array(reader.GetOutput().GetBounds())
+
     tr2 = vtkTransform()
-    tr2.Translate(bb1[0]-bb0[0], 
-                  (bb1[3]+bb1[2])/2 - (bb0[3]+bb0[2])/2,
-                  bb1[5]-bb0[5])
+    tr2.Translate(bb0[0]-bb1[0],
+                  (bb0[3]+bb0[2])/2 -(bb1[3]+bb1[2])/2,
+                  bb0[5]-bb1[5])
     # tr.RotateX(-90)
     
     tp2 = vtkTransformFilter()
-    tp2.SetInputConnection(tp.GetOutputPort())
+    tp2.SetInputConnection(surface_filter.GetOutputPort())
     tp2.SetTransform(tr2)
     tp2.Update()
+
     
-    points3 =tp2.GetOutput()
+    #points3 =tp2.GetOutput()
+    points3 = tp2.GetOutput()
     
     implicitPolyDataDistance = vtkImplicitPolyDataDistance()
     implicitPolyDataDistance.SetInput(surface_filter.GetOutput())
@@ -113,8 +126,23 @@ def computeDistances(obj_filename, vtk_filename):
         p = points3.GetPoint(pointId)
         signedDistance = implicitPolyDataDistance.EvaluateFunction(p)
         signedDistances.InsertNextValue(signedDistance)
-        
+
     distances = np.array(signedDistances)
+    print(' ')
+    print('Surface filter bounds: ')
+    print(surface_filter.GetOutput().GetBounds())
+    print('Surface filter # points: ' + str(surface_filter.GetOutput().GetNumberOfPoints()))
+    print('Surface filter # polygons: ' + str(surface_filter.GetOutput().GetNumberOfCells()))
+    print(' ')
+    print('Distance shape: ' + str(distances.shape))
     
-    dist=np.mean(np.abs(distances))
+    dist=np.sum(np.abs(distances))
+
+    ## writing surface mesh
+    outputfilename = vtk_filename[:-19] + '-surf-' + str(dist) + '.vtk'
+    writer = vtkPolyDataWriter()
+    writer.SetFileName(outputfilename)
+    writer.SetInputData(tp2.GetOutput())
+    writer.Update()
+
     return dist

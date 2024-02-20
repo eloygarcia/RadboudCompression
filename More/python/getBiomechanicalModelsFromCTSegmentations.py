@@ -32,12 +32,10 @@ for index, row in df.iterrows():
     if os.path.exists(outputimagename) and not os.path.exists(outputmeshname):
         text = [ItkToCgal_path + 'ItkToCGAL',
                 outputimagename,
-                outputmeshname]
-               #3output_path + '/' + BCT_references[i] + '-outputMesh.vtk',
-               # image_path,
-               # output_path + '/' + BCT_references[i] + '-compressedMesh.vtk',
-               #output_path + '/' + BCT_references[i] + '-phantom.nrrd']
+                outputmeshname,
+                '--bc', 'CT',
+                '--bc_thickness', '2']
         call(text)
-    break
+    
 
 

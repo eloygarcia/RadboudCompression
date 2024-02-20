@@ -27,6 +27,7 @@ int main( int argc, char* argv[])
     std::string mesh = argv[1];
     std::string output = argv[2];
 	float thick = atof(argv[3]);
+	float gravity = atof(argv[4]);
 
 	// Vtk
     vtkSmartPointer< vtkUnstructuredGridReader> meshReader = vtkSmartPointer< vtkUnstructuredGridReader>::New();
@@ -148,6 +149,8 @@ int main( int argc, char* argv[])
 		myParameters.pectoralAngle = 0; // input_mammogram->getPectoralAngle();
 
 		myParameters.paddleAngle = 0;
+
+		myParameters.gravity = gravity;
 
 	float nuPoisson = 0.499;
 	float E_fat = 4.46*1000 ;

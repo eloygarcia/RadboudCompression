@@ -81,13 +81,13 @@ struct argum{
         facet_distance = 1;
         cell_radius_edge_ratio = 2;
         cell_size = 2;
-        bc_thickness = 2;
+        bc_thickness = 0;
 
         pixel_spacing.push_back(0.273); // X size
         pixel_spacing.push_back(0.273); // Y size
         pixel_spacing.push_back(0.273); // Z size
 
-        pectoral_muscle = 0;
+        bc = "VICTRE";
     };
     ~argum(){};
 
@@ -99,7 +99,7 @@ struct argum{
     double cell_size;
     double bc_thickness;
     std::vector<float> pixel_spacing;
-    int pectoral_muscle;
+    std::string bc;
 };
 
 argum argParser(int argc, char* argv[])
@@ -113,15 +113,15 @@ argum argParser(int argc, char* argv[])
         if( strcmp(argv[i],"--facet_distance")==0 ) argumentos.facet_distance = atof(argv[i+1]);
         if( strcmp(argv[i],"--cell_radius_edge_ratio")==0 ) argumentos.cell_radius_edge_ratio = atof(argv[i+1]);
         if( strcmp(argv[i],"--cell_size")==0 ) argumentos.cell_size = atof(argv[i+1]);
-        if( strcmp(argv[i], "--bc_thickness")==0 ) argumentos.bc_thickness = atof(argv[i+1]);
         if( strcmp(argv[i], "--pixel_spacing")==0 ){
             argumentos.pixel_spacing[0] = atof(argv[i+1]);
             argumentos.pixel_spacing[1] = atof(argv[i+2]);
             argumentos.pixel_spacing[2] = atof(argv[i+3]);
         };
-        if(strcmp(argv[i],"--pectoral_muscle")==0){
-            argumentos.pectoral_muscle = atoi(argv[i+1]);
+        if(strcmp(argv[i],"--bc")==0){
+            argumentos.bc = argv[i+1];
         };
+        if( strcmp(argv[i], "--bc_thickness")==0 ) argumentos.bc_thickness = atof(argv[i+1]);
     }
     return argumentos;
 }
@@ -141,9 +141,9 @@ void usage()
     std::cout << " \t --facet_distance : (default "<< argumentos.facet_distance << ")" << std::endl;
     std::cout << " \t --cell_radius_edge_ratio : (default "<< argumentos.cell_radius_edge_ratio << ")" << std::endl;
     std::cout << " \t --cell_size : (default "<< argumentos.cell_size << ")" << std::endl;
-    std::cout << " \t --bc_thickness : (default "<< argumentos.bc_thickness << ")" << std::endl;
     std::cout << " \t --pixel_spacing : (default " << argumentos.pixel_spacing[0] << ", " << argumentos.pixel_spacing[1] << ", " << argumentos.pixel_spacing[0] << ")" << std::endl;
-    std::cout << " \t --pectoral_muscle : (default 0 -i.e. no pectoral muscle-)" << std::endl;
+    std::cout << " \t --bc : (default VICTRE -i.e. no pectoral muscle-) or  CT" << std::endl;
+    std::cout << " \t --bc_thickness : (default "<< argumentos.bc_thickness << ")" << std::endl;
 };
 
 int updatePhysicalInformation(ImageType::Pointer & image, std::vector<float> pixel_spacing, std::string inputfilename)
@@ -163,10 +163,10 @@ int updatePhysicalInformation(ImageType::Pointer & image, std::vector<float> pix
         spacing[2] = pixel_spacing[2];
     image->SetSpacing( spacing );
 
-    std::cout << "Writing " << inputfilename.substr(0, inputfilename.length()-5) << "-a.nrrd image" << std::endl;
+    std::cout << "Writing " << inputfilename.substr(0, inputfilename.length()-5) << "-resampled.nrrd image" << std::endl;
 
     WriterType::Pointer writer = WriterType::New();
-        writer->SetFileName( inputfilename.substr(0, inputfilename.length()-5) +"-a.nrrd" );
+        writer->SetFileName( inputfilename.substr(0, inputfilename.length()-5) +"-resampled.nrrd" );
         writer->SetInput( image );
         writer->UseCompressionOn();
         try{
@@ -681,7 +681,7 @@ void writeMesh(std::string outputfilename, C3t3 c3t3)
     }
 }
 
-void labelingElements(vtkSmartPointer<vtkUnstructuredGrid>& u_grid, ImageType::Pointer image)
+void labelingElements(vtkSmartPointer<vtkUnstructuredGrid>& u_grid, ImageType::Pointer image, std::string bc, int bc_thickness)
 {
     /* Labeling elements */
     // Set material description in the elements:
@@ -735,28 +735,48 @@ void labelingElements(vtkSmartPointer<vtkUnstructuredGrid>& u_grid, ImageType::P
 
      u_grid->GetCellData()->SetScalars( data ); // Tissues
 
-      // Boundary conditions:
-      // This is performed using point data.
-      //
-     vtkSmartPointer<vtkCellDataToPointData> cell2point = vtkSmartPointer<vtkCellDataToPointData>::New();
-        cell2point->SetInputData(u_grid);
-        cell2point->Update();
-
     // initialize point data array
     vtkIntArray * bcdata = vtkIntArray::New();
-	bcdata->SetName("boundaryConditions");
+    bcdata->SetName("boundaryConditions");
 
-    // std::cout << cell2point->GetOutput()->GetCellData()->GetNumberOfArrays() << std::endl;
-    // std::cout << cell2point->GetOutput()->GetPointData()->GetNumberOfArrays() << std::endl;
-    // std::cout << cell2point->GetOutput()->GetPointData()->GetArray(0)->GetNumberOfTuples() << std::endl;
-    // std::cout << cell2point->GetOutput()->GetPointData()->GetArray(0)->GetName() << std::endl;
-    for( int i=0; i<cell2point->GetOutput()->GetPointData()->GetArray(0)->GetNumberOfTuples(); i++){
-        if( cell2point->GetOutput()->GetPointData()->GetArray(0)->GetTuple1(i) > 3) bcdata->InsertNextValue(1);
-        else bcdata->InsertNextValue(0);
-        //std::cout << cell2point->GetOutput()->GetPointData()->GetArray(0)->GetTuple1(i) << std::endl;
+    if( strcmp(bc.c_str(), "VICTRE")==0){
+        std::cout << "Using VICTRE labeling for BC" << std::endl;
+          // Boundary conditions:
+          // This is performed using point data.
+          //
+         vtkSmartPointer<vtkCellDataToPointData> cell2point = vtkSmartPointer<vtkCellDataToPointData>::New();
+            cell2point->SetInputData(u_grid);
+            cell2point->Update();
+
+        // std::cout << cell2point->GetOutput()->GetCellData()->GetNumberOfArrays() << std::endl;
+        // std::cout << cell2point->GetOutput()->GetPointData()->GetNumberOfArrays() << std::endl;
+        // std::cout << cell2point->GetOutput()->GetPointData()->GetArray(0)->GetNumberOfTuples() << std::endl;
+        // std::cout << cell2point->GetOutput()->GetPointData()->GetArray(0)->GetName() << std::endl;
+        for( int i=0; i<cell2point->GetOutput()->GetPointData()->GetArray(0)->GetNumberOfTuples(); i++){
+            if( cell2point->GetOutput()->GetPointData()->GetArray(0)->GetTuple1(i) > 3) bcdata->InsertNextValue(1);
+            else bcdata->InsertNextValue(0);
+            //std::cout << cell2point->GetOutput()->GetPointData()->GetArray(0)->GetTuple1(i) << std::endl;
+        }
+    }else if( strcmp(bc.c_str(), "CT")==0){
+        std::cout << "Using CT labeling for BC" << std::endl;
+        vtkSmartPointer<vtkPoints> bcpoints = u_grid->GetPoints();
+        int numberofpoints = bcpoints->GetNumberOfPoints();
+        double * bbox = bcpoints->GetBounds();
+        double * point;
+        for(int i=0; i<numberofpoints; i++){
+            pt = bcpoints->GetPoint(i);
+            // std::cout << "[" << pt[0] << ", " << pt[1] << ", " << pt[2] << "]" << std::endl;
+            /*
+            This code extract the boundary conditions using CT images, that do not contains pectoral muscle.
+            In this case, the bc_thickess y define the volume in milimeters where the bc have to be located.
+            If there are no bc nodes in the final mesh check (and change if necessary) the axis and limits of the
+             */
+            if( pt[0] < (bbox[0]+bc_thickness)) bcdata->InsertNextValue(1);
+            else bcdata->InsertNextValue(0);
+        }
     }
-
     u_grid->GetPointData()->SetScalars( bcdata );
+
 }
 
 int main(int argc, char* argv[])
@@ -781,10 +801,15 @@ int main(int argc, char* argv[])
     std::cout << " Facet Distance : " << argumentos.facet_distance << std::endl;
     std::cout << " Cell Radius-Edge Ratio : " << argumentos.cell_radius_edge_ratio << std::endl;
     std::cout << " Cell Size : " << argumentos.cell_size << std::endl;
-    std::cout << " Boundary Condition Thickness : " << argumentos.bc_thickness << std::endl;
     std::cout << " Image spacing : [" << argumentos.pixel_spacing[0] << ", " << argumentos.pixel_spacing[1] << ", " << argumentos.pixel_spacing[0] << "]" << std::endl;
+    std::cout << " Boundary Condition Type : " << argumentos.bc << std::endl;
+    if(strcmp(argumentos.bc.c_str(), "CT")==0)    std::cout << " Boundary Condition Thickness : " << argumentos.bc_thickness << std::endl;
     std::cout << std::endl;
 
+    if((strcmp(argumentos.bc.c_str(), "CT")==0) && (argumentos.bc_thickness==0)){
+        std::cout << "Check BC conditions. BC thickness cannot be 0 for CT images." << std::endl;
+        return EXIT_FAILURE;
+    }
 
     // Itk Image
     ReaderType::Pointer reader = ReaderType::New();
@@ -798,12 +823,16 @@ int main(int argc, char* argv[])
         }
 
     ImageType::Pointer img = reader->GetOutput();
+    ImageType::SpacingType sp = img->GetSpacing();
 
     // Physical information
     std::string subname = inputfilename.substr( inputfilename.length()-5, inputfilename.length());
     //std::cout << subname.c_str() << std::endl;
 
-    if(strcmp(subname.c_str(),".nrrd")!=0 || strcmp(subname.c_str(),".mhd")!=0 ){
+    if((strcmp(subname.c_str(),".nrrd")!=0 && strcmp(subname.c_str(),".mhd")!=0) ||
+        (sp[0]!=0.273 && sp[1]!=0.273 && sp[2]!=0.273)
+        )
+    {
         int e = updatePhysicalInformation(img, argumentos.pixel_spacing, inputfilename);
         if(e!=0) return EXIT_FAILURE;
     };
@@ -880,7 +909,7 @@ int main(int argc, char* argv[])
     vtkMeshWithBC(c3t3, vtk_umesh);
 
     // Labeling elements
-    labelingElements(vtk_umesh,img);
+    labelingElements(vtk_umesh,img, argumentos.bc, argumentos.bc_thickness);
 
     /// Writing the mesh
 	vtkSmartPointer<vtkUnstructuredGridWriter> writer = vtkSmartPointer<vtkUnstructuredGridWriter>::New();

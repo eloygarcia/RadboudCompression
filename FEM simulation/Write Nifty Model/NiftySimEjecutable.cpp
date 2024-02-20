@@ -179,9 +179,11 @@ void NiftySimEjecutable::CompressionFunction(modelParameters myParameters, std::
 	//	for(int i =0; i<unique_node_vector.size(); i++) node_vect.push_back( unique_node_vector[i]);
 	std::vector<double> AccelerationDirection;
 		AccelerationDirection.push_back( 0 );
-		AccelerationDirection.push_back( -1 );
+		AccelerationDirection.push_back( 1 );
 		AccelerationDirection.push_back( 0 );
-	new_model->addGravity(unique_node_vector, "100", AccelerationDirection);
+
+	std::string grav = std::to_string(myParameters.gravity);
+	new_model->addGravity(unique_node_vector, (char *)grav.c_str(), AccelerationDirection);
 
 
 	// =============================== System Params ========================
