@@ -29,6 +29,8 @@ from vtkmodules.vtkIOLegacy import (
 from toCompress import compressionFunction
 from compDistances import computeDistances
 
+from scipy import optimize
+
 np.bool = np.bool_
 
 info = '/home/eloygarcia/Escritorio/Datasets/RadboudThicknes.csv' ## path to the info file. Rows: ['Patient', 'Thickness']
@@ -36,6 +38,40 @@ BCT_basedir = '/home/eloygarcia/Escritorio/Datasets/Breast Phantoms Radboud' ## 
 PCA_basedir = '/home/eloygarcia/Escritorio/Pruebas/abreast-generator/Phantoms1'
 
 df = pd.read_csv(info)
+
+global meshname
+global pcafilname
+global nifysimmodelname
+global patient
+global thickness
+
+class MyTakeStep:
+   def __init__(self, stepsize=10): ## incluir un ration de valores
+       self.stepsize = stepsize
+       self.rng = np.random.default_rng()
+   def __call__(self, x):
+       s = self.stepsize
+       x[0] += self.rng.uniform(-4*s, 4*s) ## al incluir el ratio, puedo hacer que estas lineas se resuelvan con un solo bucle
+       x[1] += self.rng.uniform(-s, s)
+       return x
+
+# def optimizationFunction( thickness, gravity, offset):
+def optimizationFunction( variable):
+    gravity = variable[0]
+    offset = variable[1]
+
+    ## compression function
+    compressionFunction(patient, thickness, meshname, nifysimmodelname, gravity, offset)
+
+
+    ## computing distances
+    vtkfilename = os.path.join(patientdir,
+                               patient + '-' + str(gravity) + '-' + str(offset) + '-compressedMesh.vtk')
+
+    metric = computeDistances(pcafilename, vtkfilename)
+
+    print(metric)
+    return(metric)
 
 for index, row in df.iterrows():
     ## Reading information
@@ -61,8 +97,8 @@ for index, row in df.iterrows():
 
         ## performing compression
         nifysimmodelname = os.path.join(patientdir, patient +'-niftysim.xml')
-        if not os.path.exists(nifysimmodelname):
-            compressionFunction(patient, thickness, meshname, nifysimmodelname)
+        #if not os.path.exists(nifysimmodelname):
+        #    compressionFunction(patient, thickness, meshname, nifysimmodelname)
 
 
         ## reading vtk compressed mesh
@@ -72,31 +108,46 @@ for index, row in df.iterrows():
         #reader_mesh.Update()
 
         ## Optimization
-        metric = computeDistances(pcafilename, vtkfilename)
-        print(metric)
-
-        n_iters = 10
-        ## initial params:
-        gravity = 150 ## Check
+        # initial params:
+        gravity = 100 ## Check
         offset = 20 ## mm
-        ## optimization params:
-        grav_step = gravity/n_iters
-        offset_step = offset/n_iters
+        x0 = [gravity, offset]
+        ## bounds
+        bounds =((0,(2*gravity)), (0,(2*offset)))
+
+        mytakestep = MyTakeStep(stepsize=np.min(x0)/2)
+
+        res = optimize.basinhopping(optimizationFunction, x0=x0 ,
+                                    niter=10, disp=True, take_step=mytakestep)#, bounds=bounds)
+        print(f"Minima found at {res[0][0]} with function value {res[1]}")
+        # plot_fitness(f, np.array(lst))
+        # plt.vlines(x=res[0][0], lw=3, ymin=300, ymax=-400, color='k', linestyle='--')
 
 
-        for i in range(n_iters):
-            temp_gravity = gravity-(i*grav_step)
+        """
+        #for i in range(n_iters+1):
+        while stop==False:
+            for j in range(2):
+                if j==0:
+                    temp_gravity = gravity - grav_step
+                else:
+                    temp_gravity = gravity + grav_step
 
-            ## compression function
-            compressionFunction(patient, thickness, meshname, nifysimmodelname, temp_gravity)
+                temp_offset = offset #-(i*offset_step)
 
-            ## computing distances
-            vtkfilename = os.path.join(patientdir, patient +'-'+str(temp_gravity)+'-compressedMesh.vtk')
-            temp_metric = computeDistances(pcafilename, vtkfilename)
-            print(temp_metric)
+                ## compression function
+                compressionFunction(patient, thickness, meshname, nifysimmodelname, temp_gravity, temp_offset)
 
-            if temp_metric < metric:
-                metric = temp_metric
+                ## computing distances
+                vtkfilename = os.path.join(patientdir, patient +'-'+str(temp_gravity)+'-'+str(temp_offset)+'-compressedMesh.vtk')
+                temp_metric[j] = computeDistances(pcafilename, vtkfilename)
+                print(temp_metric[j])
+
+                if temp_metric[j] < metric:
+                    metric = temp_metric[j]
+                    gravity = temp_gravity
+                if
+        """
     break
 
 """

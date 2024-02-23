@@ -71,10 +71,10 @@ def is_container_running(container_name: str) -> Optional[bool]:
         return container_state["Status"] == RUNNING
     """
 
-def compressionFunction(patient, thickness, mesh_path, output_path, gravity):
+def compressionFunction(patient, thickness, mesh_path, output_path, gravity, offset):
     ### Create NiftySim Model
     text = ['/home/eloygarcia/Escritorio/Pruebas/Release Compression/FEM Simulation/Write Nifty Model/WriteNiftyModel',
-            mesh_path, output_path, str(thickness), str(gravity)]
+            mesh_path, output_path, str(thickness), str(gravity), str(offset)]
     print(text)
     call(text)
 
@@ -101,5 +101,5 @@ def compressionFunction(patient, thickness, mesh_path, output_path, gravity):
 
     text = ['/home/eloygarcia/Escritorio/Pruebas/Release Compression/Phantom Reconstruction/Extract Compressed Mesh/getCompressedMesh',
             os.path.join(os.path.dirname(output_path), patient+'-outputMesh.vtk'),
-            os.path.join(os.path.dirname(output_path), patient+'-'+str(gravity)+'-compressedMesh.vtk')]
+            os.path.join(os.path.dirname(output_path), patient+'-'+str(gravity)+'-'+str(offset)+'-compressedMesh.vtk')]
     call(text)

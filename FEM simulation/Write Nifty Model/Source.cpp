@@ -20,7 +20,7 @@
 int main( int argc, char* argv[])
 {
     if(argc<3){
-        std::cout << "usage: " << argv[0] << " mesh_filename ouput_filename thickness (in mm.)" << std::endl;
+        std::cout << "usage: " << argv[0] << " mesh_filename ouput_filename thickness (mm) gravity offset(mm)" << std::endl;
         return EXIT_FAILURE;
     }
 
@@ -28,6 +28,7 @@ int main( int argc, char* argv[])
     std::string output = argv[2];
 	float thick = atof(argv[3]);
 	float gravity = atof(argv[4]);
+	float offset = atof(argv[5]);
 
 	// Vtk
     vtkSmartPointer< vtkUnstructuredGridReader> meshReader = vtkSmartPointer< vtkUnstructuredGridReader>::New();
@@ -151,6 +152,7 @@ int main( int argc, char* argv[])
 		myParameters.paddleAngle = 0;
 
 		myParameters.gravity = gravity;
+		myParameters.offset = offset;
 
 	float nuPoisson = 0.499;
 	float E_fat = 4.46*1000 ;

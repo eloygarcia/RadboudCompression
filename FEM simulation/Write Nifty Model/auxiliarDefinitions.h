@@ -58,6 +58,7 @@ struct modelParameters
 
 		// Gravity
 		gravity = 100;
+		offset = 20;
 	}
 
 	std::string name;
@@ -117,7 +118,9 @@ struct modelParameters
 
 	float paddleAngle;
 
+    // new fef/2024
 	float gravity;
+	float offset;
 }; 
 
 #endif
