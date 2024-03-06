@@ -19,8 +19,10 @@ apt-get install -y libx11-dev libxt-dev xserver-xorg-dev xorg-dev ;
 # https://en.wikibooks.org/wiki/OpenGL_Programming/Installation/Linux
 RUN apt-get update && apt-get install --yes build-essential libgl1-mesa-dev libssl-dev
 
+## Intalling cgal
+RUN  apt-get install -y libcgal-dev \
 
-    # cmake
+# cmake
  RUN wget http://www.cmake.org/files/v3.16/cmake-3.16.6.tar.gz \
     && tar xzf cmake-3.16.6.tar.gz
 # old version 2.8.12.2
@@ -31,7 +33,6 @@ RUN cd cmake-3.16.6 \
     && ./configure --prefix=/usr/local \
     && make \
     && make install
-
 
 
 # cmake
@@ -49,16 +50,13 @@ RUN cd tk8.6.6/unix && ./configure && make && make install
 
 # vtk
 # Download & extract VTK
-
 # check : https://discourse.vtk.org/t/installing-vtk-in-ubuntu-18-04/2147/3
+RUN wget https://www.vtk.org/files/release/9.3/VTK-9.3.0.tar.gz && tar -zxvf VTK-9.3.0.tar.gz
 
-#RUN mkdir -p
-RUN wget http://www.vtk.org/files/release/8.2/VTK-8.2.0.tar.gz && tar -zxvf VTK-8.2.0.tar.gz
-#  old version 7.1.1
-# second old version 8.2.0
-# version 9.3.0 does not work
+# Required version 9.3.0 or higher due to "vtkStaticCleanUnstructuredGrid.h"
 
-RUN mkdir -p /home/vtk-build2
+
+RUN mkdir -p /home/vtk-build
 RUN cd /home/vtk-build2/ && cmake \
    -DCMAKE_BUILD_TYPE:STRING=Release \
    -DBUILD_TESTING:BOOL=OFF \
@@ -67,7 +65,7 @@ RUN cd /home/vtk-build2/ && cmake \
    -DVTK_WRAP_TCL:BOOL=ON \
    -DVTK_PYTHON_VERSION:STRING=3 \
    -DVTK_USE_TK:BOOL=ON \
-   /VTK-8.2.0/ && make
+   /VTK-9.3.0/ && make
 
 ## Download & build itk \
 RUN wget https://github.com/InsightSoftwareConsortium/ITK/releases/download/v5.3.0/InsightToolkit-5.3.0.tar.gz && tar -zxvf InsightToolkit-5.3.0.tar.gz
@@ -77,6 +75,17 @@ RUN cd /home/itk-build && cmake \
     -DBUILD_EXAMPLES:BOOL=ON \
     -DITK_BUILD_DEFAULT_MODULES:BOOL=ON \
     -DModule_IOMeshSWC:BOOL=ON \
-    -DVTK_DIR:PATH=/home/vtk-built2 \
+    -DVTK_DIR:PATH=/home/vtk-built \
     -DZLIBNG_ENABLE_TESTS:BOOL=ON \
     /InsightToolkit-5.3.0/ && make
+
+
+## Copying source code
+COPY ./ $HOME/home/Model-Extraction-source
+RUN mkdir -p /home/Model-Extraction
+RUN cd /home/Model-Extraction && cmake \
+    -G "Unix Makefiles" \
+    -DCGAL_DIR:STRING="/usr/lib/x86_64-linux-gnu/cmake/CGAL" \
+    -DITK_DIR:STRING='/home/itk-build' \
+    -DVTK_DIR:STRING="/home/vtk-build" \
+    /home/Model-Extraction-source/ && make

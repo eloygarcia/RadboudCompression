@@ -147,7 +147,7 @@ void NiftySimEjecutable::CompressionFunction(modelParameters myParameters, std::
 	}
 	// std::vector<double> bb = myParameters.boundingBox;
 	bb.clear() ;  bb = myParameters.boundingBox;
-	de = (((float)abs(bb[3] - (bb[2]+20.0) ))-((float) myParameters.thickness));
+	de = (((float)abs(bb[3] - (bb[2]+(float)myParameters.offset) ))-((float) myParameters.thickness));
 
 	std::cout << std::endl;
 	std::cout << "Bounding box = [" << bb[0] <<", "<< bb[1] <<", "<< bb[2] <<", ";
@@ -158,7 +158,8 @@ void NiftySimEjecutable::CompressionFunction(modelParameters myParameters, std::
 	b.clear() ; b.push_back(bb[1]+50);	b.push_back(bb[2]);	b.push_back(bb[4]-50);
 	c.clear() ; c.push_back(bb[0]-50);	c.push_back(bb[2]);	c.push_back(bb[5]+50);
 
-	disp.clear() ; disp.push_back(0); disp.push_back(+20); disp.push_back(0);
+    disp.clear() ; disp.push_back(0); disp.push_back(de); disp.push_back(0);
+	//disp.clear() ; disp.push_back(0); disp.push_back(myParameters.offset); disp.push_back(0);
 	std::cout << "Displacement: [" << disp[0] << ", " << disp[1] << ", " << disp[2] << "]" << std::endl;
 //	
 	new_model->addContactPlate(a,c,b,disp, unique_node_vector);		
@@ -170,7 +171,8 @@ void NiftySimEjecutable::CompressionFunction(modelParameters myParameters, std::
 	b.clear() ; b.push_back(bb[0]-50);	b.push_back(bb[3]);	b.push_back(bb[5]+50);
 	c.clear() ; c.push_back(bb[1]+50);	c.push_back(bb[3]);	c.push_back(bb[4]-50);
 //
-	disp.clear() ; disp.push_back(0); disp.push_back(-de); disp.push_back(0);
+	//disp.clear() ; disp.push_back(0); disp.push_back(-de); disp.push_back(0);
+	disp.clear() ; disp.push_back(0); disp.push_back(-myParameters.offset); disp.push_back(0);
 	std::cout << "Displacement: [" << disp[0] << ", " << disp[1] << ", " << disp[2] << "]" << std::endl;
 //
 	new_model->addContactPlate(a,c,b,disp, unique_node_vector);
@@ -179,9 +181,11 @@ void NiftySimEjecutable::CompressionFunction(modelParameters myParameters, std::
 	//	for(int i =0; i<unique_node_vector.size(); i++) node_vect.push_back( unique_node_vector[i]);
 	std::vector<double> AccelerationDirection;
 		AccelerationDirection.push_back( 0 );
-		AccelerationDirection.push_back( -1 );
+		AccelerationDirection.push_back( 1 );
 		AccelerationDirection.push_back( 0 );
-	new_model->addGravity(unique_node_vector, "100", AccelerationDirection);
+
+	std::string grav = std::to_string(myParameters.gravity);
+	new_model->addGravity(unique_node_vector, (char *)grav.c_str(), AccelerationDirection);
 
 
 	// =============================== System Params ========================
