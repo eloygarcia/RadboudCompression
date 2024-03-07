@@ -87,7 +87,7 @@ RUN mkdir -p /home/Model-Extraction
 RUN cd /home/Model-Extraction && cmake \
     -G "Unix Makefiles" \
     -DCMAKE_BUILD_TYPE:STRING=Release -DCGAL_ImageIO_USE_ZLIB:BOOL=ON \
-    -DCGAL_DIR:STRING="/usr/lib/x86_64-linux-gnu/cmake/CGAL" \
-    -DITK_DIR:STRING="/home/itk-build" \
-    -DVTK_DIR:STRING="/home/vtk-build" \
+    -DCGAL_DIR:STRING=/usr/lib/x86_64-linux-gnu/cmake/CGAL \
+    -DITK_DIR:STRING=/home/itk-build \
+    -DVTK_DIR:STRING=/home/vtk-build \
     /home/Model-Extraction-source/ && make
