@@ -45,10 +45,10 @@ typedef itk::ImageToVTKImageFilter<ImageType> ItktoVtkType;
 #include <CGAL/Mesh_complex_3_in_triangulation_3.h>
 #include <CGAL/Mesh_criteria_3.h>
 #include <CGAL/Labeled_mesh_domain_3.h>
-#include <CGAL/Mesh_3/generate_label_weights.h>
+//#include <CGAL/generate_label_weights.h>
 #include <CGAL/make_mesh_3.h>
 #include <CGAL/Image_3.h>
-#include <CGAL/IO/read_vtk_image_data.h>
+#include <CGAL/read_vtk_image_data.h>
 
 #include <boost/lexical_cast.hpp>
 #include <boost/functional.hpp>
