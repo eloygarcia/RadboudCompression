@@ -20,10 +20,10 @@ apt-get install -y libx11-dev libxt-dev xserver-xorg-dev xorg-dev ;
 RUN apt-get update && apt-get install --yes build-essential libgl1-mesa-dev libssl-dev
 
 ## Intalling cgal
-RUN  apt-get install -y libcgal-dev \
+RUN  apt-get install -y libcgal-dev
 
 # cmake
- RUN wget http://www.cmake.org/files/v3.16/cmake-3.16.6.tar.gz \
+RUN wget http://www.cmake.org/files/v3.16/cmake-3.16.6.tar.gz \
     && tar xzf cmake-3.16.6.tar.gz
 # old version 2.8.12.2
 # RUN wget http://www.cmake.org/files/v2.8/cmake-2.8.12.2.tar.gz \
@@ -57,7 +57,7 @@ RUN wget https://www.vtk.org/files/release/9.3/VTK-9.3.0.tar.gz && tar -zxvf VTK
 
 
 RUN mkdir -p /home/vtk-build
-RUN cd /home/vtk-build2/ && cmake \
+RUN cd /home/vtk-build/ && cmake \
    -DCMAKE_BUILD_TYPE:STRING=Release \
    -DBUILD_TESTING:BOOL=OFF \
    -DVTK_WRAP_PYTHON:BOOL=OFF \
@@ -72,10 +72,11 @@ RUN wget https://github.com/InsightSoftwareConsortium/ITK/releases/download/v5.3
 
 RUN mkdir -p /home/itk-build
 RUN cd /home/itk-build && cmake \
-    -DBUILD_EXAMPLES:BOOL=ON \
+    -DBUILD_EXAMPLES:BOOL=OFF \
     -DITK_BUILD_DEFAULT_MODULES:BOOL=ON \
     -DModule_IOMeshSWC:BOOL=ON \
-    -DVTK_DIR:PATH=/home/vtk-built \
+    -DModule_ITKVtkGlue:BOOL=ON \
+    -DVTK_DIR:PATH=/home/vtk-build \
     -DZLIBNG_ENABLE_TESTS:BOOL=ON \
     /InsightToolkit-5.3.0/ && make
 
@@ -85,7 +86,8 @@ COPY ./ $HOME/home/Model-Extraction-source
 RUN mkdir -p /home/Model-Extraction
 RUN cd /home/Model-Extraction && cmake \
     -G "Unix Makefiles" \
-    -DCGAL_DIR:STRING="/usr/lib/x86_64-linux-gnu/cmake/CGAL" \
-    -DITK_DIR:STRING='/home/itk-build' \
-    -DVTK_DIR:STRING="/home/vtk-build" \
+    -DCMAKE_BUILD_TYPE:STRING=Release -DCGAL_ImageIO_USE_ZLIB:BOOL=ON \
+    -DCGAL_DIR:STRING=/usr/lib/x86_64-linux-gnu/cmake/CGAL \
+    -DITK_DIR:STRING=/home/itk-build \
+    -DVTK_DIR:STRING=/home/vtk-build \
     /home/Model-Extraction-source/ && make
