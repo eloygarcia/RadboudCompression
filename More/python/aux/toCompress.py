@@ -54,10 +54,14 @@ def is_container_running(container_name: str) -> Optional[bool]:
         return False
     else:
         container_state = container.attrs["State"]
+        print(container_state["Status"])
 
     if not container_state["Status"] == RUNNING:
         print('Container is not running')
         container.restart()
+
+    container_state = container.attrs["State"]
+    print(container_state["Status"])
     return container
 
     """
@@ -81,7 +85,7 @@ def compressionFunction(patient, thickness, mesh_path, output_path, gravity, off
     ### Exec Niftysim into docker container
     copyfile(output_path, os.path.join(tempFolder, os.path.basename(output_path)))
     container = is_container_running(CONTAINER_NAME)
-    print('is here')
+    # print('is here')
 
     text = ['home/niftysim/release/source/niftysim',
         '-x', os.path.join('/home/results', os.path.basename(output_path)),
@@ -89,17 +93,39 @@ def compressionFunction(patient, thickness, mesh_path, output_path, gravity, off
         '-export-mesh',
          os.path.join('/home/results', patient+'-outputMesh.vtk')]
     print('Beggining NiftySim compression')
-    container.exec_run(' '.join(text))
+
+    container.attach(stdout=True, stream=True, logs=True)
+    output = container.exec_run(' '.join(text))
+    print(output)
+
+    if not output[0]==0:
+        for line in output:
+            print(line)
+
+    container.stop()
     print('Finishing compression')
 
     print( os.path.join(tempFolder, patient+'-outputMesh.vtk') )
     print( os.path.join(os.path.dirname(output_path), patient+'-outputMesh.vtk') )
+    #if os.path.exists(os.path.join(tempFolder, patient+'-outputMesh.vtk') ):
     copyfile(os.path.join(tempFolder, patient+'-outputMesh.vtk'),
-             os.path.join(os.path.dirname(output_path), patient+'-outputMesh.vtk'))
+            os.path.join(os.path.dirname(output_path), patient+'-outputMesh.vtk'))
+    #else:
+    #    return 0
 
     ### Reconstructing Compressed mesh
-
-    text = ['/home/eloygarcia/Escritorio/Pruebas/Release Compression/Phantom Reconstruction/Extract Compressed Mesh/getCompressedMesh',
+    if os.path.exists(os.path.join(os.path.dirname(output_path), patient+'-outputMesh.vtk')):
+        text = ['/home/eloygarcia/Escritorio/Pruebas/Release Compression/Phantom Reconstruction/Extract Compressed Mesh/getCompressedMesh',
             os.path.join(os.path.dirname(output_path), patient+'-outputMesh.vtk'),
             os.path.join(os.path.dirname(output_path), patient+'-'+str(gravity)+'-'+str(offset)+'-compressedMesh.vtk')]
-    call(text)
+        call(text)
+    else:
+        return 0
+
+    ## removing temporal files
+    call(["rm", os.path.join(tempFolder, patient + '-outputMesh.vtk')])
+    call(["rm", os.path.join(tempFolder, patient+'-outputMesh.vtk')])
+
+if __name__ == "__main__":
+    import sys
+    #compressionFunction()

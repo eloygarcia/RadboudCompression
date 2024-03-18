@@ -19,7 +19,12 @@ from vtkmodules.vtkIOGeometry import (
     # vtkSTLReader,
     vtkOBJReader
     )
-from vtkmodules.vtkFiltersCore import vtkImplicitPolyDataDistance
+from vtkmodules.vtkFiltersCore import (
+    vtkImplicitPolyDataDistance
+    #vtkDistancePolyDataFilter
+)
+
+from vtk import vtkDistancePolyDataFilter, vtkHausdorffDistancePointSetFilter
 # from vtkmodules.vtkRenderingCore import (
 #     vtkActor,
 #     vtkDataSetMapper,
@@ -99,7 +104,7 @@ def computeDistances(obj_filename, vtk_filename):
     bb0 = np.array(reader.GetOutput().GetBounds())
 
     tr2 = vtkTransform()
-    tr2.Translate(bb0[1]-bb1[1],
+    tr2.Translate(bb0[0]-bb1[0],
                   (bb0[3]+bb0[2])/2 - (bb1[3]+bb1[2])/2,
                   (bb0[5]+bb0[4])/2 - (bb1[5]-bb1[4])/2)
     # tr.RotateX(-90)
@@ -112,7 +117,29 @@ def computeDistances(obj_filename, vtk_filename):
     
     #points3 =tp2.GetOutput()
     points3 = tp2.GetOutput()
-    
+
+    """
+    distanceFilter1 = vtkDistancePolyDataFilter()
+    distanceFilter1.SetInputConnection(0, surface_filter.GetOutputPort())
+    distanceFilter1.SetInputConnection(1, tp2.GetOutputPort())
+    distanceFilter1.SignedDistanceOn()
+    distanceFilter1.ComputeSecondDistanceOn()
+    distanceFilter1.ComputeDirectionOn()
+    distanceFilter1.Update()
+
+    dist1 = np.array( distanceFilter1.GetOutput().GetPointData().GetScalars() )
+    dist2 = np.array(distanceFilter1.GetSecondDistanceOutput().GetPointData().GetScalars())
+    print(dist1.shape)
+    print(dist2.shape)
+    distances = np.append(dist1,dist2)
+    """
+    distanceFilter1 = vtkHausdorffDistancePointSetFilter()
+    distanceFilter1.SetInputConnection(0, surface_filter.GetOutputPort())
+    distanceFilter1.SetInputConnection(1, tp2.GetOutputPort())
+    distanceFilter1.Update()
+    distances = np.array(distanceFilter1.GetRelativeDistance())
+
+    """
     implicitPolyDataDistance = vtkImplicitPolyDataDistance()
     implicitPolyDataDistance.SetInput(surface_filter.GetOutput())
     
@@ -135,7 +162,7 @@ def computeDistances(obj_filename, vtk_filename):
     print('Surface filter # polygons: ' + str(surface_filter.GetOutput().GetNumberOfCells()))
     print(' ')
     print('Distance shape: ' + str(distances.shape))
-    
+    """
     dist=np.sum(np.abs(distances))
 
     ## writing surface mesh
@@ -146,3 +173,7 @@ def computeDistances(obj_filename, vtk_filename):
     writer.Update()
 
     return dist
+
+if __name__ == "__main__":
+    import sys
+    computeDistances()

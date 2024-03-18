@@ -1,30 +1,10 @@
 import os
-import sys
-from subprocess import call
-import sys
-sys.path.append('./aux/')
-import toCompress
+import pandas as pd
 import numpy as np
 np.bool = np.bool_
-
-import pandas as pd
-import shutil
-
-from vtkmodules.vtkIOGeometry import (
-    vtkOBJReader
-    )
-from vtk.util.numpy_support import vtk_to_numpy
-from vtk import (
-    vtkUnstructuredGridReader
-    )
-from vtkmodules.vtkFiltersGeometry import (
-    #vtkGeometryFilter,
-    vtkDataSetSurfaceFilter
-    )
-from vtkmodules.vtkIOLegacy import (
-    vtkPolyDataReader,
-    vtkPolyDataWriter
-    )
+os.chdir('/home/eloygarcia/Escritorio/Pruebas/RadboudCompression/More/python')
+import sys
+sys.path.append('./aux/')
 
 from toCompress import compressionFunction
 from compDistances import computeDistances
@@ -35,7 +15,7 @@ np.bool = np.bool_
 
 info = '/home/eloygarcia/Escritorio/Datasets/RadboudThicknes.csv' ## path to the info file. Rows: ['Patient', 'Thickness']
 BCT_basedir = '/home/eloygarcia/Escritorio/Datasets/Breast Phantoms Radboud' ## Initial bCT segmentation folder
-PCA_basedir = '/home/eloygarcia/Escritorio/Pruebas/abreast-generator/Phantoms1'
+PCA_basedir = '/home/eloygarcia/Escritorio/Pruebas/abreast-generator/Results'
 
 df = pd.read_csv(info)
 
@@ -46,13 +26,16 @@ global patient
 global thickness
 
 class MyTakeStep:
-   def __init__(self, stepsize=10): ## incluir un ration de valores
+   def __init__(self, stepsize=10, stepratio=[1]): ## incluir un ratio de valores
        self.stepsize = stepsize
+       self.stepratio = stepratio
        self.rng = np.random.default_rng()
    def __call__(self, x):
        s = self.stepsize
-       x[0] += self.rng.uniform(-4*s, 4*s) ## al incluir el ratio, puedo hacer que estas lineas se resuelvan con un solo bucle
-       x[1] += self.rng.uniform(-s, s)
+       for i in range(len(self.stepratio)):
+           x[i] += self.rng.uniform(-s*self.stepratio[i], s*self.stepratio[i])
+       #x[0] += self.rng.uniform(-4*s, 4*s) ## al incluir el ratio, puedo hacer que estas lineas se resuelvan con un solo bucle
+       #x[1] += self.rng.uniform(-s, s)
        return x
 
 # def optimizationFunction( thickness, gravity, offset):
@@ -61,7 +44,9 @@ def optimizationFunction( variable):
     offset = variable[1]
 
     ## compression function
-    compressionFunction(patient, thickness, meshname, nifysimmodelname, gravity, offset)
+    idx = compressionFunction(patient, thickness, meshname, nifysimmodelname, gravity, offset)
+    if idx==0:
+        return ValueError('No files!')
 
 
     ## computing distances
@@ -83,7 +68,7 @@ for index, row in df.iterrows():
 
     patientdir = os.path.join(BCT_basedir, patient)
     meshname = os.path.join(patientdir, patient + '_Segmented.vtk')
-    pcafilename = os.path.join(PCA_basedir, 'Thickness-'+str(thickness)+'.vtk')
+    pcafilename = os.path.join(PCA_basedir, patient+'.vtk')
 
     if os.path.exists(pcafilename) and os.path.exists(meshname):
         ## reading pca
@@ -114,10 +99,11 @@ for index, row in df.iterrows():
         x0 = [gravity, offset]
         ## bounds
         bounds =((0,(2*gravity)), (0,(2*offset)))
+        ratio = x0/np.min(x0)
 
-        mytakestep = MyTakeStep(stepsize=np.min(x0)/2)
+        mytakestep = MyTakeStep(stepsize=np.min(x0), stepratio=ratio)
 
-        res = optimize.basinhopping(optimizationFunction, x0=x0 ,
+        res = optimize.basinhopping(optimizationFunction, x0=x0 , T=100,
                                     niter=10, disp=True, take_step=mytakestep)#, bounds=bounds)
         print(f"Minima found at {res[0][0]} with function value {res[1]}")
         # plot_fitness(f, np.array(lst))

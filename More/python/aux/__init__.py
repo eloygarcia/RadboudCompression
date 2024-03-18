@@ -1,2 +1,2 @@
-from aux.toCompress import compressionFunction
-from aux.compDistances import computeDistances
+from toCompress import compressionFunction
+from compDistances import computeDistances

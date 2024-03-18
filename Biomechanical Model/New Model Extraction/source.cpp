@@ -6,11 +6,13 @@
 #include "itkImageFileReader.h"
 #include "itkBinaryThresholdImageFilter.h"
 #include "itkImageFileWriter.h"
+#include "itkFlipImageFilter.h"
 
 typedef itk::Image<unsigned short,3> ImageType;
 typedef itk::ImageFileReader<ImageType> ReaderType;
 typedef itk::BinaryThresholdImageFilter<ImageType, ImageType> ThresholdType;
 typedef itk::ImageFileWriter< ImageType > WriterType;
+typedef itk::FlipImageFilter< ImageType > FlipType;
 
 #include "itkPoint.h"
 typedef itk::Point<double, ImageType::ImageDimension> PointType;
@@ -88,6 +90,7 @@ struct argum{
         pixel_spacing.push_back(0.273); // Z size
 
         bc = "VICTRE";
+        side = "R";
     };
     ~argum(){};
 
@@ -100,6 +103,7 @@ struct argum{
     double bc_thickness;
     std::vector<float> pixel_spacing;
     std::string bc;
+    std::string side;
 };
 
 argum argParser(int argc, char* argv[])
@@ -122,6 +126,7 @@ argum argParser(int argc, char* argv[])
             argumentos.bc = argv[i+1];
         };
         if( strcmp(argv[i], "--bc_thickness")==0 ) argumentos.bc_thickness = atof(argv[i+1]);
+        if( strcmp(argv[i], "--breast_side")==0 ) argumentos.side = argv[i+1];
     }
     return argumentos;
 }
@@ -144,6 +149,7 @@ void usage()
     std::cout << " \t --pixel_spacing : (default " << argumentos.pixel_spacing[0] << ", " << argumentos.pixel_spacing[1] << ", " << argumentos.pixel_spacing[0] << ")" << std::endl;
     std::cout << " \t --bc : (default VICTRE -i.e. no pectoral muscle-) or  CT" << std::endl;
     std::cout << " \t --bc_thickness : (default "<< argumentos.bc_thickness << ")" << std::endl;
+    std::cout << " \t --breast_side : (default "<< argumentos.side << ")" << std::endl;
 };
 
 int updatePhysicalInformation(ImageType::Pointer & image, std::vector<float> pixel_spacing, std::string inputfilename)
@@ -166,7 +172,8 @@ int updatePhysicalInformation(ImageType::Pointer & image, std::vector<float> pix
     std::cout << "Writing " << inputfilename.substr(0, inputfilename.length()-5) << "-resampled.nrrd image" << std::endl;
 
     WriterType::Pointer writer = WriterType::New();
-        writer->SetFileName( inputfilename.substr(0, inputfilename.length()-5) +"-resampled.nrrd" );
+        //writer->SetFileName( inputfilename.substr(0, inputfilename.length()-5) +"-resampled.nrrd" );
+        writer->SetFileName( inputfilename );
         writer->SetInput( image );
         writer->UseCompressionOn();
         try{
@@ -177,191 +184,6 @@ int updatePhysicalInformation(ImageType::Pointer & image, std::vector<float> pix
             return EXIT_FAILURE;
         };
     return 0;
-}
-
-void writeInpFile(std::string outputfilename, C3t3 c3t3)
-{
-    std::ofstream file;
-    file.open( outputfilename.c_str() );
-
-    file << "*HEADING \n";
-    file << "E.Garcia, January 2023 \n";
-    file << "Units: Millimetres (mm) \n";
-    file << "**============================================================================== \n";
-
-    // Material definitions
-    file << "**MATERIAL DEFINITIONS BEGIN \n";
-    file << "**============================================================================== \n";
-    file << "**============================================================================== \n";
-
-    file << "**MATERIAL PLACEHOLDER BEGIN \n";
-    file << "**Part: MASK 1 \n";
-    file << "**Part Material: MASK 1 \n";
-    file << "*SOLID SECTION, ELSET=PT_MASK_1, MATERIAL=PM_MASK_1 \n";
-    file << "*MATERIAL, NAME=PM_MASK_1 \n";
-    file << "**MATERIAL PLACEHOLDER END \n";
-    file << "**============================================================================== \n";
-    file << "**============================================================================== \n";
-
-    file << "**MATERIAL DEFINITIONS END \n";
-    file << "**============================================================================== \n";
-    file << "**============================================================================== \n";
-
-    // Contact definitions
-    file << "**CONTACT DEFINITIONS BEGIN \n";
-    file << "**============================================================================== \n";
-    file << "**============================================================================== \n";
-    file << "**CONTACT DEFINITIONS END \n";
-    file << "**============================================================================== \n";
-    file << "**============================================================================== \n";
-    
-    // Node data
-    file << "**NODE DATA BEGIN \n";
-    file << "**============================================================================== \n";
-    file << "*NODE \n";
-    file << "**------------------------------------------------------------------------------ \n";
-    file << "**INDEX, X COORD, Y COORD, Z COORD \n";
-    file << "**------------------------------------------------------------------------------ \n";
-
-    Tr tr = c3t3.triangulation();
-    int i = 0;
-    /*
-    // the actual trick: create a map of Point_3 (Vertex_Handle map did not work for me...)
-    // std::map<Point_3, int> V;
-    for (Tr::All_vertices_iterator it=t.all_vertices_begin(); it != t.all_vertices_end(); ++it)
-    {
-	    // add the current Point_3 to the map with its current index
-	    // V[it->point()] = i;
-        if( i>0 ){	
-            file << i <<", "<<it->point()[0]<<", " <<it->point()[1]<<", " <<it->point()[2]<<"\n";
-            //file << i <<", "<<it->point()<<"\n";
-        };
-    	++i;
-    }
-    */
-
-    std::map<Point_3, int> V;
-    for (Tr::All_vertices_iterator it=tr.all_vertices_begin(); it != tr.all_vertices_end(); ++it)
-    {   
-        if( i>0 ){	
-            file << i <<", "<<it->point()[0]<<", " <<it->point()[1]<<", " <<it->point()[2]<<"\n";
-
-            V[it->point()] = i;
-        };
-	    ++i;
-    }
-
-
-    file << "**============================================================================== \n";
-    file << "**NODE DATA END \n";
-    file << "**============================================================================== \n";
-    file << "**============================================================================== \n";
-
-    // Element data
-    file << "**SOLID ELEMENT DATA BEGIN \n";
-    file << "**============================================================================== \n";
-    file << "**============================================================================== \n";
-    
-    file << "**ELEMENTS - Part: Mask 1 BEGIN \n";
-    file << "**Part Material: MASK 1 \n";
-    file << "**Material ID: PM_MASK_1 \n";
-    file << "**Material Index: 1 \n";
-    
-    file << "**============================================================================== \n";
-    file << "**ELEMENTS (TETRAHEDRA) - Part: Mask 1 BEGIN \n";
-    file << "*ELEMENT, TYPE=C3D4, ELSET=PT_MASK_1 \n";
-
-    i=1;
-    /*
-    for (Tr::All_cells_iterator it = t.all_cells_begin(); it != t.all_cells_end(); ++it)
-    {
-        if(i>0){
-    	//std::cout<<"Complex #"<<i<<" : "<<it->subdomain_index()<<std::endl;
-	    const Tr::Cell c(*it);
-    	const Tr::Vertex_handle v0 = c.vertex(0);
-    	const Tr::Vertex_handle v1 = c.vertex(1);
-    	const Tr::Vertex_handle v2 = c.vertex(2);
-    	const Tr::Vertex_handle v3 = c.vertex(3);
-    	//std::cout<<v0->point()<<" ; "<<v1->point()<<" ; "<<v2->point()<<" ; "<<v3->point()<<std::endl;
-    	//std::cout<<"Indices: "<<std::distance(t.all_vertices_begin(), v0)<<"/"<<std::distance(t.all_vertices_begin(), v1)<<"/"<<std::distance(t.all_vertices_begin(), v2)<<"/"<<std::distance(t.all_vertices_begin(), v3)<<std::endl;
-
-        file << i << "," << std::distance(t.all_vertices_begin(), v0)+1 << "," << std::distance(t.all_vertices_begin(), v1)+1 << "," << std::distance(t.all_vertices_begin(), v2)+1 << "," << std::distance(t.all_vertices_begin(), v3)+1<<"\n";
-        }
-	    ++i;
-    }
-    */	
-    C3t3::Vertex_handle v0;
-	C3t3::Vertex_handle v1;
-	C3t3::Vertex_handle v2;
-	C3t3::Vertex_handle v3;
-
-    for (C3t3::Cell_iterator it = c3t3.cells_in_complex_begin(); it != c3t3.cells_in_complex_end(); ++it)
-    {
-	    const Tr::Cell c(*it);
-	    v0 = c.vertex(0);
-	    v1 = c.vertex(1);
-	    v2 = c.vertex(2);
-	    v3 = c.vertex(3);
-	    // std::cout<<"Point #"<<i<<" : "<<v0->point()<<" ; "<<v1->point()<<" ; "<<v2->point()<<" ; "<<v3->point()<<std::endl;
-	    // std::cout<<"Indices: "<<V[v0->point()]<<"/"<<V[v1->point()]<<"/"<<V[v2->point()]<<"/"<<V[v3->point()]<<std::endl;
-
-        file << i << "," << V[v0->point()] << "," << V[v1->point()] << "," << V[v2->point()] << "," << V[v3->point()] <<"\n";
-	    ++i;
-    }
-
-    file << "**ELEMENTS (TETRAHEDRA) - Part: Mask 1 END \n";
-    file << "**============================================================================== \n";
-    file << "**ELEMENTS - Part: Mask 1 END \n";
-    file << "**============================================================================== \n";
-    file << "**============================================================================== \n";
-    file << "**SOLID ELEMENT DATA END \n";
-    file << "**============================================================================== \n";
-    file << "**============================================================================== \n";
-
-    // Shell Element data
-    file << "**SHELL ELEMENT DATA BEGIN \n";
-    file << "**============================================================================== \n";
-    file << "**============================================================================== \n";
-    file << "**SHELL ELEMENT DATA END \n";
-    file << "**============================================================================== \n";
-    file << "**============================================================================== \n";
-
-    // Contact Surface Data
-    file << "**CONTACT SURFACE DATA BEGIN \n";
-    file << "**============================================================================== \n";
-    file << "**============================================================================== \n";
-    file << "**CONTACT SURFACE DATA END \n";
-    file << "**============================================================================== \n";
-
-    file.close();
-
-}
-
-
-void vtk_getBoundaryConditions(vtkPoints * points, vtkIntArray * data)
-{
-    int numberofpoints = points->GetNumberOfPoints();
-    //vtkIntArray * data = vtkIntArray::New();
-	data->SetName("PectoralBC");
-	double * bbox = points->GetBounds();
-	std::cout << bbox << std::endl;
-
-	/*
-	bool is_inside = false;
-	for(int bc = 0; bc< numberofpoints; bc++ )	{
-		is_inside = false;
-		for(int j=0; j<bC_list.size(); j++){
-			if (bc==bC_list[j])
-			{
-					is_inside = true;
-					std::cout << "Is INSIDE " << bc << std::endl;
-			}
-		}
-
-		if(is_inside) data->InsertNextValue(1);
-		else data->InsertNextValue(0);
-	}
-	*/
 }
 
 void vtkMeshWithBC(C3t3 c3t3, vtkSmartPointer<vtkUnstructuredGrid>& vtk_umesh)
@@ -451,56 +273,9 @@ void vtkMeshWithBC(C3t3 c3t3, vtkSmartPointer<vtkUnstructuredGrid>& vtk_umesh)
 	    ++i;
     }
 
-    vtkIntArray * bc_data = vtkIntArray::New();
-    vtk_getBoundaryConditions(points, bc_data);
-
-    /* Set Boundary conditions
-	vtkIntArray * data = vtkIntArray::New();
-		data->SetName("PectoralBC");
-	bool is_inside = false;
-	for(int bc = 0; bc< numberofpoints; bc++ )	{
-		is_inside = false;
-		for(int j=0; j<bC_list.size(); j++){
-			if (bc==bC_list[j])
-			{
-					is_inside = true;
-					std::cout << "Is INSIDE " << bc << std::endl;
-			}
-		}
-
-		if(is_inside) data->InsertNextValue(1);
-		else data->InsertNextValue(0);
-	}
-
-	//vtkIdType * id_tissue;
-	vtkIntArray * tissues = vtkIntArray::New();
-		tissues->SetName("Tissue");
-	for( int t=0; t<tissue_list.size(); t++){
-		tissues->InsertNextValue(  tissue_list[t] );
-	}
-    */
 
 	vtk_umesh->SetPoints(points); // Points
 	vtk_umesh->SetCells(VTK_TETRA, cells); // Cells
-
-
-
-//vtkCellIterator * iter = vtk_umesh->NewCellIterator();
-
-//for(iter->InitTraversal(); !iter->IsDoneWithTraversal(); iter->GoToNextCell()){
-//    std::cout << iter->GetCellType() << std::endl;
-     //vtkTetra tetra = iter->Get
-     // iter->GetCenter(tempCenter);
-    //std::cout << "[" << tempCenter[0] << ", " << tempCenter[1] << ", " << tempCenter[2] <<"]"  <<std::endl;
-//};
-
-	// grid->GetPointData()->SetScalars( data ); // BoundaryConditions
-	// grid->GetCellData()->SetScalars( tissues ); // Tissues
-
-    /// Cleaning the mesh!
-    //std::cout << std::endl;
-    //std::cout << "Initial number of points: "<< vtk_umesh->GetNumberOfPoints() << std::endl;
-   // std::cout << "Initial number of cells: "<< vtk_umesh->GetNumberOfCells() << std::endl;
 
     vtkSmartPointer< vtkStaticCleanUnstructuredGrid > cleaningMesh = vtkSmartPointer< vtkStaticCleanUnstructuredGrid>::New();
         cleaningMesh->SetInputData(vtk_umesh);
@@ -514,171 +289,6 @@ void vtkMeshWithBC(C3t3 c3t3, vtkSmartPointer<vtkUnstructuredGrid>& vtk_umesh)
     std::cout << "Final number of cells: "<< cleaningMesh->GetOutput()->GetNumberOfCells() << std::endl;
 
     vtk_umesh = cleaningMesh->GetOutput();
-}
-
-void writeVTKmesh( std::string outputfilename, C3t3 c3t3)
-{
-    vtkSmartPointer<vtkUnstructuredGrid> grid = vtkSmartPointer<vtkUnstructuredGrid>::New();
-
-    Tr tr = c3t3.triangulation();
-	//std::cout << "createUnstructuredGrid" << std::endl;
-    int numberofpoints = tr.number_of_vertices();
-    //std::cout << "number of points " << numberofpoints << std::endl;
-    int numberofcells = c3t3.number_of_cells();
-    //std::cout << "number of cells " << numberofcells << std::endl;
-
-    // temporal vectors for boundary conditions and element labelling
-    std::vector<float> i_points;
-    std::vector<int> elements;
-	// ========================================================
-    // Points!
-	vtkPoints * points = vtkPoints::New();
-	vtkCellArray * cells = vtkCellArray::New();
-
-	points->SetNumberOfPoints( numberofpoints );
-	double * auxPoint = new double[3];
-		auxPoint[0] = 0.0;
-		auxPoint[1] = 0.0;
-		auxPoint[2] = 0.0;
-
-    int i = 0;
-    std::map<Point_3, int> V;
-    for (Tr::All_vertices_iterator it=tr.all_vertices_begin(); it != tr.all_vertices_end(); ++it)
-    {
-        if( i>0 ){
-            auxPoint[0] = it->point()[0];
-            auxPoint[1] = it->point()[1];
-            auxPoint[2] = it->point()[2];
-
-            // temporal nodes vector
-            i_points.push_back(auxPoint[0]);
-            i_points.push_back(auxPoint[1]);
-            i_points.push_back(auxPoint[2]);
-            //
-
-            points->SetPoint(i-1, auxPoint);
-
-            V[it->point()] = i-1;
-
-
-        };
-	    ++i;
-    }
-
-    // Cell!
-	vtkSmartPointer<vtkIdTypeArray> idCells = vtkSmartPointer<vtkIdTypeArray>::New();
-
-	idCells->SetNumberOfComponents(4);
-	idCells->SetNumberOfTuples( numberofcells );
-
-	vtkIdType* tuple = new vtkIdType[4];
-
-    i = 0;
-	C3t3::Vertex_handle v0;
-	C3t3::Vertex_handle v1;
-	C3t3::Vertex_handle v2;
-	C3t3::Vertex_handle v3;
-
-    for (C3t3::Cell_iterator it = c3t3.cells_in_complex_begin(); it != c3t3.cells_in_complex_end(); ++it)
-    {
-	    const Tr::Cell c(*it);
-	    v0 = c.vertex(0);
-	    v1 = c.vertex(1);
-	    v2 = c.vertex(2);
-	    v3 = c.vertex(3);
-	    // std::cout<<"Point #"<<i<<" : "<<v0->point()<<" ; "<<v1->point()<<" ; "<<v2->point()<<" ; "<<v3->point()<<std::endl;
-	    // std::cout<<"Indices: "<<V[v0->point()]<<"/"<<V[v1->point()]<<"/"<<V[v2->point()]<<"/"<<V[v3->point()]<<std::endl;
-
-        //tuple[0] = 4;
-		tuple[0] = V[v0->point()];
-		tuple[1] = V[v1->point()];
-		tuple[2] = V[v2->point()];
-		tuple[3] = V[v3->point()];
-
-		// temporal element vector
-		elements.push_back( tuple[0] );
-		elements.push_back( tuple[1] );
-		elements.push_back( tuple[2] );
-		elements.push_back( tuple[3] );
-		///
-
-        cells->InsertNextCell(4,tuple);
-
-	    ++i;
-    }
-
-    /* Set Boundary conditions
-	vtkIntArray * data = vtkIntArray::New();
-		data->SetName("PectoralBC");
-	bool is_inside = false;
-	for(int bc = 0; bc< numberofpoints; bc++ )	{
-		is_inside = false;
-		for(int j=0; j<bC_list.size(); j++){
-			if (bc==bC_list[j])
-			{
-					is_inside = true;
-					std::cout << "Is INSIDE " << bc << std::endl;
-			}
-		}
-
-		if(is_inside) data->InsertNextValue(1);
-		else data->InsertNextValue(0);
-	}
-
-	//vtkIdType * id_tissue;
-	vtkIntArray * tissues = vtkIntArray::New();
-		tissues->SetName("Tissue");
-	for( int t=0; t<tissue_list.size(); t++){
-		tissues->InsertNextValue(  tissue_list[t] );
-	}
-    */
-
-	grid->SetPoints(points); // Points
-	grid->SetCells(VTK_TETRA, cells); // Cells
-
-	// grid->GetPointData()->SetScalars( data ); // BoundaryConditions
-	// grid->GetCellData()->SetScalars( tissues ); // Tissues
-
-    /// Cleaning the mesh!
-    //std::cout << std::endl;
-    //std::cout << "Initial number of points: "<< grid->GetNumberOfPoints() << std::endl;
-    //std::cout << "Initial number of cells: "<< grid->GetNumberOfCells() << std::endl;
-
-    vtkSmartPointer< vtkStaticCleanUnstructuredGrid > cleaningMesh = vtkSmartPointer< vtkStaticCleanUnstructuredGrid>::New();
-        cleaningMesh->SetInputData(grid);
-        cleaningMesh->ToleranceIsAbsoluteOn();
-        cleaningMesh->SetTolerance(0.0);
-        cleaningMesh->RemoveUnusedPointsOn();
-        cleaningMesh->Update();
-
-    std::cout << std::endl;
-    std::cout << "Final number of points: "<< cleaningMesh->GetOutput()->GetNumberOfPoints() << std::endl;
-    std::cout << "Final number of cells: "<< cleaningMesh->GetOutput()->GetNumberOfCells() << std::endl;
-
-    /// Writing the mesh
-	vtkSmartPointer<vtkUnstructuredGridWriter> initialGridWriter = vtkSmartPointer<vtkUnstructuredGridWriter>::New();
-		initialGridWriter->SetInputData( cleaningMesh->GetOutput() );
-		initialGridWriter->SetFileName( outputfilename.c_str() );
-		initialGridWriter->Update();
-		initialGridWriter->Write();
-}
-
-void writeMesh(std::string outputfilename, C3t3 c3t3)
-{
-    if( outputfilename.compare(outputfilename.size()-4,4,".inp")==0 )  {
-        std::cout << "Writing .inp file..." << std::endl;
-        writeInpFile(outputfilename, c3t3);
-    } else if ( outputfilename.compare(outputfilename.size()-4,4,".vtk")==0 ) {
-        std::cout << "Writing .vtk file..." << std::endl;
-        writeVTKmesh(outputfilename, c3t3);
-    } else {
-        std::cout << "File name does not correspond to neither inp nor vtk file format" << std::endl;
-        std::cout << "Writing .mesh file..." << std::endl;
-        outputfilename = outputfilename + ".mesh";
-        std::ofstream medit_file( outputfilename.c_str() );
-        c3t3.output_to_medit( medit_file );
-        std::cout << "Use medit to visualize the mesh!" << std::endl;
-    }
 }
 
 void labelingElements(vtkSmartPointer<vtkUnstructuredGrid>& u_grid, ImageType::Pointer image, std::string bc, int bc_thickness)
@@ -771,7 +381,8 @@ void labelingElements(vtkSmartPointer<vtkUnstructuredGrid>& u_grid, ImageType::P
             In this case, the bc_thickess y define the volume in milimeters where the bc have to be located.
             If there are no bc nodes in the final mesh check (and change if necessary) the axis and limits of the
              */
-            if( pt[0] < (bbox[0]+bc_thickness)) bcdata->InsertNextValue(1);
+            if( pt[0] < (bbox[0]+bc_thickness)) bcdata->InsertNextValue(1); // for radboud CT images pt[0] < (bbox[0]+bc_thickness)
+                                                                            // for UC Davis (Sarno paper) pt[2] < (bbox[4]+bc_thickness)
             else bcdata->InsertNextValue(0);
         }
     }
@@ -804,6 +415,7 @@ int main(int argc, char* argv[])
     std::cout << " Image spacing : [" << argumentos.pixel_spacing[0] << ", " << argumentos.pixel_spacing[1] << ", " << argumentos.pixel_spacing[0] << "]" << std::endl;
     std::cout << " Boundary Condition Type : " << argumentos.bc << std::endl;
     if(strcmp(argumentos.bc.c_str(), "CT")==0)    std::cout << " Boundary Condition Thickness : " << argumentos.bc_thickness << std::endl;
+    std::cout << " Breast Side: " << argumentos.side << std::endl;
     std::cout << std::endl;
 
     if((strcmp(argumentos.bc.c_str(), "CT")==0) && (argumentos.bc_thickness==0)){
@@ -825,17 +437,34 @@ int main(int argc, char* argv[])
     ImageType::Pointer img = reader->GetOutput();
     ImageType::SpacingType sp = img->GetSpacing();
 
+    // Breast Side: Flipping to the R view
+    if(strcmp(argumentos.side.c_str(), "R")!=0 || strcmp(argumentos.side.c_str(), "L")==0){
+        FlipType::Pointer flipFilter = FlipType::New();
+        FlipType::FlipAxesArrayType flipAxes;
+            flipAxes[0] = false;
+            flipAxes[1] = false;
+            flipAxes[2] = true;
+
+        flipFilter->SetInput(img);
+        flipFilter->SetFlipAxes(flipAxes);
+        flipFilter->Update();
+
+        img=flipFilter->GetOutput();
+    }
+
+
     // Physical information
     std::string subname = inputfilename.substr( inputfilename.length()-5, inputfilename.length());
     //std::cout << subname.c_str() << std::endl;
 
-    if((strcmp(subname.c_str(),".nrrd")!=0 && strcmp(subname.c_str(),".mhd")!=0) ||
-        (sp[0]!=0.273 && sp[1]!=0.273 && sp[2]!=0.273)
-        )
-    {
+    // if((strcmp(subname.c_str(),".nrrd")!=0 && strcmp(subname.c_str(),".mhd")!=0) ||
+    //    (sp[0]!=0.273 && sp[1]!=0.273 && sp[2]!=0.273)
+    //    )
+    //{
         int e = updatePhysicalInformation(img, argumentos.pixel_spacing, inputfilename);
         if(e!=0) return EXIT_FAILURE;
-    };
+    //};
+
 
     // Thresholding
     ThresholdType::Pointer threshold = ThresholdType::New();
