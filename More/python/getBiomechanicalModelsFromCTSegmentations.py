@@ -37,7 +37,19 @@ for index, row in df.iterrows():
     std::cout << " --cell_radius_edge_ratio : (default "<< argumentos.cell_radius_edge_ratio << ")" << std::endl;
     std::cout << " --cell_size : (default "<< argumentos.cell_size << ")" << std::endl;
     """
-    if side=='L' and os.path.exists(outputimagename):# and not os.path.exists(outputmeshname): ## rewriting biomechanical models
+    #if side=='L' and os.path.exists(outputimagename):# and not os.path.exists(outputmeshname): ## rewriting biomechanical models
+    if (patient == 'BCT_16006_002' or
+        patient == 'BCT_16006_004' or
+        patient == 'BCT_16006_016' or
+        patient == 'BCT_16006_021' or
+        patient == 'BCT_16006_053' or
+        patient == 'BCT_16006_057' or
+        patient == 'BCT_16006_076' or
+        patient == 'BCT_16006_097' or
+        patient == 'BCT_16006_099' or
+        patient == 'BCT_16006_109' or
+        patient == 'BCT_16006_113' or
+        patient == 'BCT_16006_124'):
         text = [ItkToCgal_path + 'ItkToCGAL',
                 outputimagename,
                 outputmeshname,
@@ -47,7 +59,7 @@ for index, row in df.iterrows():
                 '--cell_size', '3', #default = 2
                 '--bc', 'CT',
                 '--bc_thickness', '2',
-                '--breast_side', side]
+                '--breast_side', 'R']
         call(text)
     
 
