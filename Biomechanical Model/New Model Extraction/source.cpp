@@ -5,12 +5,17 @@
 #include "itkImage.h"
 #include "itkImageFileReader.h"
 #include "itkBinaryThresholdImageFilter.h"
+#include "itkBinaryBallStructuringElement.h"
+#include "itkDilateBinaryFilter.h"
 #include "itkImageFileWriter.h"
 #include "itkFlipImageFilter.h"
+
 
 typedef itk::Image<unsigned short,3> ImageType;
 typedef itk::ImageFileReader<ImageType> ReaderType;
 typedef itk::BinaryThresholdImageFilter<ImageType, ImageType> ThresholdType;
+typedef itk::BinaryBallStructuringElement<unsigned short, 3> StructuringElementType;
+typedef itk::BinaryDilateImageFilter<ImageType, ImageType, StructuringElementType> DilateType;
 typedef itk::ImageFileWriter< ImageType > WriterType;
 typedef itk::FlipImageFilter< ImageType > FlipType;
 
@@ -477,10 +482,23 @@ int main(int argc, char* argv[])
    ImageType::SizeType ss = threshold->GetOutput()->GetLargestPossibleRegion().GetSize();
    std::cout << "Size: [" << ss[0] <<", "<< ss[1] <<", "<< ss[2] <<"]"<< std::endl;
 
+    // Dilate
+    StructuringElementType structuringElement;
+        structuringElement.SetRadius(1); // 3x3 structuring element
+        structuringElement.CreateStructuringElement();
+
+    DilateType::Pointer binaryDilate = DilateType::New();
+        binaryDilate->SetKernel(structuringElement);
+        binaryDilate->SetInput(threshold->GetOutput());
+        binaryDilate->SetDilateValue(1);
+        binaryDilate->Update()
+
+
     std::cout << "itk to vtk" << std::endl;
     // Itk to Vtk
     ItktoVtkType::Pointer itkToVtk = ItktoVtkType::New();
-        itkToVtk->SetInput( threshold->GetOutput() );
+        //itkToVtk->SetInput( threshold->GetOutput() );
+        itkToVtk->SetInput( binaryDilate->GetOutput() );
         try{
             itkToVtk->Update();
         } catch( itk::ExceptionObject & excp) {

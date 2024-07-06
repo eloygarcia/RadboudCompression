@@ -4,8 +4,8 @@ from subprocess import call
 import pandas as pd
 import shutil
 
-info = '/home/eloygarcia/Escritorio/Datasets/Breast Phantoms Radboud/RadboudThicknes.csv' ## path to the info file. Rows: ['Patient', 'BreastSide', 'Thickness']
-BCT_basedir = '/home/eloygarcia/Escritorio/Datasets/Breast Phantoms Radboud' ## Initial bCT segmentation folder
+info = './RadboudThicknes.csv' ## path to the info file. Rows: ['Patient', 'BreastSide', 'Thickness']
+BCT_basedir = '/home/eloygarcia/Escritorio/Phantom Validation/phantoms' ## Initial bCT segmentation folder
 
 ItkToCgal_path =  '/home/eloygarcia/Escritorio/Pruebas/Release Compression/Biomechanical Model/New Model Extraction/'
 
