@@ -4,10 +4,13 @@ from subprocess import call
 import pandas as pd
 import shutil
 
-info = './RadboudThicknes.csv' ## path to the info file. Rows: ['Patient', 'BreastSide', 'Thickness']
-BCT_basedir = '/home/eloygarcia/Escritorio/Phantom Validation/phantoms' ## Initial bCT segmentation folder
 
-ItkToCgal_path =  '/home/eloygarcia/Escritorio/Pruebas/Release Compression/Biomechanical Model/New Model Extraction/'
+info = '/home/data/RadboudThicknes.csv'  ## path to the info file. Rows: ['Patient', 'BreastSide', 'Thickness']
+BCT_basedir = '/home/data/'  ## Initial bCT segmentation folder at the docker container
+
+# Aux definitions
+ItkToCgal_path = '/home/Model-Extraction/ItkToCGAL' ## exec path at the docker container
+##
 
 df = pd.read_csv(info)
 
@@ -28,7 +31,7 @@ for index, row in df.iterrows():
     outputmeshname = os.path.join(outputdir, patient + '_Segmented.vtk')
 
     if os.path.exists(imagename) and not os.path.exists(outputimagename):
-        shutil.copyfile(imagename, outputimagename )
+        shutil.copyfile(imagename, outputimagename)
 
     """
     std::cout << " --facet_angle : (default "<< argumentos.facet_angle << ")" << std::endl;
@@ -37,18 +40,16 @@ for index, row in df.iterrows():
     std::cout << " --cell_radius_edge_ratio : (default "<< argumentos.cell_radius_edge_ratio << ")" << std::endl;
     std::cout << " --cell_size : (default "<< argumentos.cell_size << ")" << std::endl;
     """
-    #if side=='L' and os.path.exists(outputimagename):# and not os.path.exists(outputmeshname): ## rewriting biomechanical models
-    text = [ItkToCgal_path + 'ItkToCGAL',
+    # if side=='L' and os.path.exists(outputimagename):# and not os.path.exists(outputmeshname): ## rewriting biomechanical models
+    text = [ItkToCgal_path,
             outputimagename,
             outputmeshname,
-            '--facet_size', '4',  #default = 2
-            '--facet_distance','2', #default =1
-            '--cell_radius_edge_ratio', '3', # default = 2
-            '--cell_size', '3', #default = 2
+            '--facet_size', '4',  # default = 2
+            '--facet_distance', '0.2',  # default =1 ## Valor pequeño, más ajustado a la superficie, pero mayor optimizacion
+            '--cell_radius_edge_ratio', '3',  # default = 2
+            '--cell_size', '3',  # default = 2
             '--bc', 'CT',
             '--bc_thickness', '2',
             '--breast_side', 'R']
     call(text)
-    
-
 

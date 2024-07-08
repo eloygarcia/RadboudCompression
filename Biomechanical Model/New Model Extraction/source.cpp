@@ -6,7 +6,7 @@
 #include "itkImageFileReader.h"
 #include "itkBinaryThresholdImageFilter.h"
 #include "itkBinaryBallStructuringElement.h"
-#include "itkDilateBinaryFilter.h"
+#include "itkBinaryDilateImageFilter.h"
 #include "itkImageFileWriter.h"
 #include "itkFlipImageFilter.h"
 
@@ -483,15 +483,17 @@ int main(int argc, char* argv[])
    std::cout << "Size: [" << ss[0] <<", "<< ss[1] <<", "<< ss[2] <<"]"<< std::endl;
 
     // Dilate
+    std::cout << "Including Dilate ball element!!!" << std::endl;
     StructuringElementType structuringElement;
-        structuringElement.SetRadius(1); // 3x3 structuring element
+        // structuringElement.SetRadius(1); // 3x3 structuring element
+        structuringElement.SetRadius(1);
         structuringElement.CreateStructuringElement();
 
     DilateType::Pointer binaryDilate = DilateType::New();
         binaryDilate->SetKernel(structuringElement);
         binaryDilate->SetInput(threshold->GetOutput());
         binaryDilate->SetDilateValue(1);
-        binaryDilate->Update()
+        binaryDilate->Update();
 
 
     std::cout << "itk to vtk" << std::endl;

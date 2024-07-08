@@ -19,6 +19,11 @@ apt-get install -y libx11-dev libxt-dev xserver-xorg-dev xorg-dev ;
 # https://en.wikibooks.org/wiki/OpenGL_Programming/Installation/Linux
 RUN apt-get update && apt-get install --yes build-essential libgl1-mesa-dev libssl-dev
 
+#install python
+RUN apt-get install -y software-properties-common
+RUN apt-get install -y python3-pip
+RUN pip install pandas
+
 ## Intalling cgal
 RUN  apt-get install -y libcgal-dev
 
