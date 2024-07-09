@@ -13,7 +13,8 @@ for root, subdirs, files in os.walk(baseDir):
 
     imagename = os.path.join(root, patient +'_Segmented.nrrd')
     initialmesh = os.path.join(root, patient +'_Segmented.vtk')
-    compressedmesh = os.path.join(root, patient +'-compressedMesh.vtk')
+    # compressedmesh = os.path.join(root, patient +'-compressedMesh.vtk')
+    compressedmesh = initialmesh
 
     outputfile =  os.path.join(root, 'Phantom-'+patient+'.nrrd')
     print(compressedmesh)

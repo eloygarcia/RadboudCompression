@@ -44,12 +44,12 @@ for index, row in df.iterrows():
     text = [ItkToCgal_path,
             outputimagename,
             outputmeshname,
-            '--facet_size', '4',  # default = 2
+            '--facet_size', '1.7',  # default = 2
             '--facet_distance', '0.2',  # default =1 ## Valor pequeño, más ajustado a la superficie, pero mayor optimizacion
-            '--cell_radius_edge_ratio', '3',  # default = 2
-            '--cell_size', '3',  # default = 2
+            '--cell_radius_edge_ratio', '1.5',  # default = 2
+            '--cell_size', '2.75',  # default = 2
             '--bc', 'CT',
             '--bc_thickness', '2',
-            '--breast_side', 'R']
+            '--breast_side', side]
     call(text)
 

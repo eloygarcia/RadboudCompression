@@ -97,6 +97,7 @@ for index, row in df.iterrows():
         gravity = 100 ## Check
         offset = 20 ## mm
         x0 = [gravity, offset]
+
         ## bounds
         bounds =((0,(2*gravity)), (0,(2*offset)))
         ratio = x0/np.min(x0)
