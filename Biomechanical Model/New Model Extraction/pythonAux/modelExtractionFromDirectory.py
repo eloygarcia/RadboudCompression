@@ -5,7 +5,7 @@ import pandas as pd
 import shutil
 
 
-info = '/home/data/RadboudThicknes.csv'  ## path to the info file. Rows: ['Patient', 'BreastSide', 'Thickness']
+info = '/home/data/Radboud-finalThickness.csv'  ## path to the info file. Rows: ['Patient', 'BreastSide', 'Thickness']
 BCT_basedir = '/home/data/'  ## Initial bCT segmentation folder at the docker container
 
 # Aux definitions
@@ -41,15 +41,17 @@ for index, row in df.iterrows():
     std::cout << " --cell_size : (default "<< argumentos.cell_size << ")" << std::endl;
     """
     # if side=='L' and os.path.exists(outputimagename):# and not os.path.exists(outputmeshname): ## rewriting biomechanical models
-    text = [ItkToCgal_path,
-            outputimagename,
-            outputmeshname,
-            '--facet_size', '1.7',  # default = 2
-            '--facet_distance', '0.2',  # default =1 ## Valor pequeño, más ajustado a la superficie, pero mayor optimizacion
-            '--cell_radius_edge_ratio', '1.5',  # default = 2
-            '--cell_size', '2.75',  # default = 2
-            '--bc', 'CT',
-            '--bc_thickness', '2',
-            '--breast_side', side]
-    call(text)
+    if patient==('BCT_16006_056') :#  or patient==('BCT_16006_076'): # or patient==('BCT_16006_084') or patient==('BCT_16006_028'):
+        text = [ItkToCgal_path,
+                outputimagename,
+                outputmeshname,
+                '--facet_size', '3',  # default = 2
+                '--facet_distance', '2',  # default =1 ## Valor pequeño, más ajustado a la superficie, pero mayor problema para la optimizacion y el resolvedor
+                '--cell_radius_edge_ratio', '2',  # default = 2
+                '--cell_size', '3',  # default = 2
+                '--bc', 'CT',
+                '--bc_thickness', '2',
+                '--breast_side', 'L']
+        call(text)
+
 

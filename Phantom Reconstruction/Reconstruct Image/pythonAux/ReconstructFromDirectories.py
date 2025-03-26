@@ -13,13 +13,13 @@ for root, subdirs, files in os.walk(baseDir):
 
     imagename = os.path.join(root, patient +'_Segmented.nrrd')
     initialmesh = os.path.join(root, patient +'_Segmented.vtk')
-    # compressedmesh = os.path.join(root, patient +'-compressedMesh.vtk')
-    compressedmesh = initialmesh
+    compressedmesh = os.path.join(root, patient +'-compressedMesh.vtk')
+    #compressedmesh = initialmesh
 
     outputfile =  os.path.join(root, 'Phantom-'+patient+'.nrrd')
     print(compressedmesh)
     print(os.path.exists(compressedmesh))
-    if os.path.exists(imagename) and os.path.exists(initialmesh) and os.path.exists(compressedmesh) and not os.path.exists(outputfile):
+    if os.path.exists(imagename) and os.path.exists(initialmesh) and os.path.exists(compressedmesh):# and not os.path.exists(outputfile):
         text = [reconstructionPath,
                 initialmesh, compressedmesh, imagename, outputfile]
         print('Beggining Image Reconstruction')

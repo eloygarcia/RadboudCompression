@@ -41,10 +41,10 @@ for index, row in df.iterrows():
     text = [ItkToCgal_path + 'ItkToCGAL',
             outputimagename,
             outputmeshname,
-            '--facet_size', '4',  #default = 2
-            '--facet_distance','2', #default =1
-            '--cell_radius_edge_ratio', '3', # default = 2
-            '--cell_size', '3', #default = 2
+            '--facet_size', '2',  #default = 2
+            '--facet_distance','0.2', #default =1
+            '--cell_radius_edge_ratio', '1.5', # default = 2
+            '--cell_size', '1.8', #default = 2
             '--bc', 'CT',
             '--bc_thickness', '2',
             '--breast_side', 'R']

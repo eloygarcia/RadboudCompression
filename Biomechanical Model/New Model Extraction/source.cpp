@@ -7,6 +7,8 @@
 #include "itkBinaryThresholdImageFilter.h"
 #include "itkBinaryBallStructuringElement.h"
 #include "itkBinaryDilateImageFilter.h"
+#include "itkBinaryMorphologicalClosingImageFilter.h"
+#include "itkBinaryMorphologicalOpeningImageFilter.h"
 #include "itkImageFileWriter.h"
 #include "itkFlipImageFilter.h"
 
@@ -16,6 +18,8 @@ typedef itk::ImageFileReader<ImageType> ReaderType;
 typedef itk::BinaryThresholdImageFilter<ImageType, ImageType> ThresholdType;
 typedef itk::BinaryBallStructuringElement<unsigned short, 3> StructuringElementType;
 typedef itk::BinaryDilateImageFilter<ImageType, ImageType, StructuringElementType> DilateType;
+typedef itk::BinaryMorphologicalClosingImageFilter< ImageType, ImageType, StructuringElementType> ClosingType;
+typedef itk::BinaryMorphologicalOpeningImageFilter< ImageType, ImageType, StructuringElementType> OpeningType;
 typedef itk::ImageFileWriter< ImageType > WriterType;
 typedef itk::FlipImageFilter< ImageType > FlipType;
 
@@ -482,6 +486,21 @@ int main(int argc, char* argv[])
    ImageType::SizeType ss = threshold->GetOutput()->GetLargestPossibleRegion().GetSize();
    std::cout << "Size: [" << ss[0] <<", "<< ss[1] <<", "<< ss[2] <<"]"<< std::endl;
 
+    // Closing
+    std::cout << "Closing element!!" << std::endl;
+    StructuringElementType structuringElement2;
+        // structuringElement.SetRadius(1); // 3x3 structuring element
+        structuringElement2.SetRadius(2);
+        structuringElement2.CreateStructuringElement();
+
+    //ClosingType::Pointer morphofilter = ClosingType::New();
+    OpeningType::Pointer morphofilter = OpeningType::New();
+        morphofilter->SetInput(threshold->GetOutput());
+        morphofilter->SetKernel(structuringElement2);
+        morphofilter->SetBackgroundValue(0);
+        morphofilter->SetForegroundValue(1);
+        morphofilter->Update();
+
     // Dilate
     std::cout << "Including Dilate ball element!!!" << std::endl;
     StructuringElementType structuringElement;
@@ -491,9 +510,11 @@ int main(int argc, char* argv[])
 
     DilateType::Pointer binaryDilate = DilateType::New();
         binaryDilate->SetKernel(structuringElement);
-        binaryDilate->SetInput(threshold->GetOutput());
+        binaryDilate->SetInput(morphofilter->GetOutput());
         binaryDilate->SetDilateValue(1);
         binaryDilate->Update();
+
+
 
 
     std::cout << "itk to vtk" << std::endl;
@@ -501,6 +522,7 @@ int main(int argc, char* argv[])
     ItktoVtkType::Pointer itkToVtk = ItktoVtkType::New();
         //itkToVtk->SetInput( threshold->GetOutput() );
         itkToVtk->SetInput( binaryDilate->GetOutput() );
+        //itkToVtk->SetInput( morphofilter->GetOutput() );
         try{
             itkToVtk->Update();
         } catch( itk::ExceptionObject & excp) {
